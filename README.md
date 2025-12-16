@@ -2,6 +2,7 @@
 
 A Python CLI script for printing the structure of your project in a visually easy-to-read format. Respects `.gitignore` files when present so ignored files and folders are omitted from the output.
 
+<br>
 
 ## Quick Setup
 
@@ -23,6 +24,7 @@ python structure.py <your_project_path>
 python structure.py <project_directory_name>
 ````
 
+<br>
 
 ## Useful CLI args
 
@@ -43,6 +45,8 @@ Adds further files or folders to ignore.
 **--gitignore-depth**
 
 Controls how deep the script looks for gitignore files. For example, `--gitignore-depth 0` should include only the gitignore present at the project root.
+
+<br>
 
 ## Contributions
 
