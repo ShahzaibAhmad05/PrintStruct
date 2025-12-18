@@ -1,0 +1,6 @@
+[project]
+name = "structure"
+version = "1.1.0"
+
+[project.scripts]
+structure = "structure:main"
