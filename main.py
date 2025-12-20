@@ -1,3 +1,4 @@
+# main.py
 from __future__ import annotations
 
 import argparse
@@ -100,7 +101,7 @@ def draw_tree(
 ) -> None:
     gi = GitIgnoreMatcher(root, enabled=respect_gitignore, gitignore_depth=gitignore_depth)
 
-    print(root.name)
+    print(root.resolve())
 
     def rec(dirpath: Path, prefix: str, depth: int, patterns: List[str]) -> None:
         if max_depth is not None and depth >= max_depth:
