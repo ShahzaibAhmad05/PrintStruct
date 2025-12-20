@@ -14,6 +14,7 @@ import pathspec
 import io
 import zipfile
 import random
+import tomllib
 
 
 BRANCH = "├─ "
@@ -81,6 +82,7 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--gitignore-depth", type=int, default=None)
     ap.add_argument("--no-gitignore", action="store_true")
     ap.add_argument("--max-items", type=max_items_int, default=20, help="Limit items shown per directory (default: 20). Use --no-limit for unlimited.")
+    ap.add_argument("--version", "-v", action="store_true", help="Display the version of the tool")
     ap.add_argument("--zip", nargs="?", default=None, const=get_unused_file_path(os.getcwd()), help="Create a zip file containing files under path (respects .gitignore and name defaults to a random ID)")
     ap.add_argument("--no-limit", action="store_true", help="Show all items regardless of count")
     return ap.parse_args()
@@ -259,10 +261,22 @@ def zip_project(
             z.write(root, root.name)
 
 
+def get_project_version() -> str:
+    """ Get the version of the tool from pyproject.toml """
+    with open("pyproject.toml","rb") as f:
+        data = tomllib.load(f)
+
+    return data["project"]["version"]
+
+
 def main() -> None:
     args = parse_args()
-    root = Path(args.path).resolve()
 
+    if args.version:
+        print(get_project_version())
+        return
+
+    root = Path(args.path).resolve()
     if not root.exists():
         print(f"Error: path not found: {root}", file=sys.stderr)
         raise SystemExit(1)
