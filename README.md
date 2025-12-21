@@ -2,7 +2,14 @@
 
 A Python CLI tool for printing the structure of your project in a visually easy-to-read format. Respects `.gitignore` files when present so ignored files and folders are omitted from the output.
 
-Example output:
+Example usage (on windows powershell):
+
+````
+PS C:/Users/Projects/PrintStruct> prst .
+````
+
+outputs:
+
 ````
 PrintStruct
 ├─ LICENSE
@@ -16,39 +23,68 @@ PrintStruct
 
 ## Quick Setup
 
-- Clone this repository:
+### Installation:
+
+- Clone the latest release version (stable):
 
 ````
-git clone https://github.com/shahzaibahmad05/printstruct
+git clone --branch v1.2.0 https://github.com/ShahzaibAhmad05/PrintStruct
 ````
 
-- Install the project on your system using pip:
+- Move your terminal to the project
+
+````
+cd PrintStruct
+````
+
+- Open `pyproject.toml`, and name the keyword you want to use in terminals to call the tool under project.scripts (default is prst):
+
+````
+[project.scripts]
+prst = "main:main"   # change prst to your preffered keyword
+````
+
+- Install the project on your system (globally) using pip:
 
 ````
 pip install -r requirements.txt
 ````
 
+and Done! The tool is installed as a python script on your system.
+
+### Usage:
+
 - Open a terminal in any project (any time) and run:
 
 ````
-structure
+prst
 ````
 
-This will print the whole structure of the repository as shown.
-
-**Note:** You can also just type:
+This will print the whole structure of the repository as shown. In fact, You can also just type:
  
 ````
-structure <project_directory_path>
+prst <directory_path>
 ````
 
-in any terminal to get the structure of the project printed.
+in any terminal to get the structure of the directory printed.
+
+### For Updates:
+
+To update the tool simply follow the installation process again, but with the latest release version. Pip will automatically handle old version removal.
 
 <br>
 
 ## Useful CLI args
 
 *Other than the directory path*, here are some CLI args you can use with this script:
+
+**--version** or **-v**
+
+Displays the version of the tool installed on the system.
+
+**--zip**
+
+Zips the project, respecting gitignores. For example, `--zip a` should create `a.zip` in the same directory having the directory contents. If zip name is not given, it defaults to a random ID.
 
 **--max-depth**
 
@@ -65,6 +101,20 @@ Adds further files or folders to ignore.
 **--gitignore-depth**
 
 Controls how deep the script looks for gitignore files. For example, `--gitignore-depth 0` should include only the gitignore present at the project root.
+
+**--no-gitignore** 
+
+Does not respect gitignore files if this flag is given.
+
+**--max-items**
+
+Max number of files/folders to display in each folder, the rest is shown as `... and x more items`. For example `--max-items 5` should display only 5 items per directory. 
+
+Default for max items is 20.
+
+**--no-limit**
+
+Remove the `--max-items` limiter on printing files. 
 
 <br>
 
