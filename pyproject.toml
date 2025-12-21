@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PrintStruct"
-version = "1.2.1"
+version = "1.2.2"
 description = "PrintStruct: print project structure and optionally zip it"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -13,6 +13,7 @@ authors = [{ name = "Shahzaib Ahmad" }]
 
 [project.scripts]
 prst = "main:main"
+printstruct = "main:main"
 
 [tool.setuptools]
 py-modules = ["main"]

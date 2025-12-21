@@ -21,14 +21,22 @@ PrintStruct
 
 <br>
 
-## Quick Setup
+## Quick Setup 
 
-### Installation:
+### Installation using pip:
 
-- Clone the latest release version (stable):
+- Run this command in your terminal:
 
 ````
-git clone --branch v1.2.0 https://github.com/ShahzaibAhmad05/PrintStruct
+pip install printstruct
+````
+
+### Installation (for Development purpose):
+
+- Clone the repository (main branch):
+
+````
+git clone https://github.com/ShahzaibAhmad05/PrintStruct
 ````
 
 - Move your terminal to the project
