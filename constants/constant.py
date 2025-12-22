@@ -1,0 +1,4 @@
+BRANCH = "├─ "
+LAST   = "└─ "
+VERT   = "│  "
+SPACE  = "   "

@@ -1,73 +1,113 @@
 # PrintStruct
 
-A Python CLI tool for printing the structure of your project in a visually easy-to-read format. Respects `.gitignore` files when present so ignored files and folders are omitted from the output.
+**PrintStruct** is a clean, lightweight Python CLI that prints a directory tree of your project **while respecting `.gitignore`**, with optional zipping support.
 
-Example output:
-````
+The problems it solves:
+
+* sharing project structure in issues or pull requests
+* generating directory trees for documentation
+* pasting project layouts into LLMs
+* zipping projects for feeding to LLMs using `.gitignore` directions
+
+<br>
+
+## Quick Start (10 seconds)
+
+### Installation using pip (recommended):
+
+Run this command in your terminal:
+
+```
+pip install printstruct
+```
+
+### Usage:
+
+Open a terminal in any project and run:
+
+```
+prst
+```
+
+This prints the directory structure of the current folder.
+
+You can also specify a path explicitly:
+
+```
+prst <directory_path>
+```
+
+Example (Windows PowerShell):
+
+```
+PS C:/Users/Projects/PrintStruct> prst .
+```
+
+Output:
+
+```
 PrintStruct
 ├─ LICENSE
 ├─ pyproject.toml
 ├─ README.md
 ├─ requirements.txt
 └─ structure.py
-````
+```
+
+### Updating PrintStruct:
+
+To update the tool, reinstall it using pip. Pip will automatically replace the older version with the latest release.
 
 <br>
 
-## Quick Setup
+## Useful CLI arguments
 
-- Clone this repository:
+In addition to the directory path, the following options are available:
 
-````
-git clone https://github.com/shahzaibahmad05/printstruct
-````
+| Argument | Description |
+|--------|-------------|
+| `--version`, `-v` | Displays the installed version. |
+| `--zip [name]` | Zips the project while respecting `.gitignore`. Example: `--zip a` creates `a.zip`. If no name is provided, a random ID is used. |
+| `--max-depth` | Limits recursion depth. Example: `--max-depth 1` shows only top-level files and folders. |
+| `--all`, `-a` | Includes hidden files and directories. Does not override `.gitignore`. |
+| `--ignore` | Adds extra files or directories to ignore. |
+| `--gitignore-depth` | Controls how deeply `.gitignore` files are discovered. Example: `--gitignore-depth 0` uses only the root `.gitignore`. |
+| `--no-gitignore` | Ignores all `.gitignore` rules when set. |
+| `--max-items` | Limits items shown per directory. Extra items are summarized as `... and x more items`. Default: `20`. |
+| `--no-limit` | Removes the per-directory item limit. |
 
-- Install the project on your system using pip:
 
-````
+<br>
+
+<br>
+
+## Installation (for Contributors)
+
+Clone the repository:
+
+```
+git clone https://github.com/ShahzaibAhmad05/PrintStruct
+```
+
+Move into the project directory:
+
+```
+cd PrintStruct
+```
+
+Install dependencies:
+
+```
 pip install -r requirements.txt
-````
+```
 
-- Open a terminal in any project (any time) and run:
-
-````
-structure
-````
-
-This will print the whole structure of the repository as shown.
-
-**Note:** You can also just type:
- 
-````
-structure <project_directory_path>
-````
-
-in any terminal to get the structure of the project printed.
-
-<br>
-
-## Useful CLI args
-
-*Other than the directory path*, here are some CLI args you can use with this script:
-
-**--max-depth**
-
-Limits how deep the directory recursion gets. For example, `--max-depth 1` should print the files and folders directly visible from the project root.
-
-**--all** or **-a**
-
-Includes hidden files and folders in the results. This does not override gitignore directives.
-
-**--ignore** 
-
-Adds further files or folders to ignore.
-
-**--gitignore-depth**
-
-Controls how deep the script looks for gitignore files. For example, `--gitignore-depth 0` should include only the gitignore present at the project root.
+The tool is now available as a Python CLI on your system.
 
 <br>
 
 ## Contributions
 
-Please feel free to open issues or submit pull requests to improve formatting, add features (e.g. colorized output), or add tests.
+Issues and pull requests are welcome.
+Ideas that would fit well include improved formatting, colorized output, test coverage, and performance optimizations.
+
+PrintStruct is intentionally small and readable, so contributions that preserve simplicity are especially appreciated.

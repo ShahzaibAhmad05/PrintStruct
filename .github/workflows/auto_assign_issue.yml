@@ -1,0 +1,69 @@
+name: auto_assign_issue
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+
+jobs:
+  assign:
+    # Only gate on "is not a PR"
+    if: github.event.issue.pull_request == null
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Assign commenter
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.payload.issue.number;
+            const assignee = context.payload.comment.user.login;
+
+            const body = context.payload.comment.body.toLowerCase();
+
+            // ✅ Case-insensitive keyword check
+            if (
+              !body.includes('assign me') &&
+              !body.includes('assign it to me') &&
+              !body.includes('assign this issue to me') &&
+              !body.includes('assign the issue to me')
+            ) {
+              core.info('No assign keyword found.');
+              return;
+            }
+
+            // 1) Don't reassign if already assigned
+            const current = context.payload.issue.assignees?.map(a => a.login) || [];
+            if (current.length > 0) {
+              core.info(`Already assigned to: ${current.join(', ')}`);
+              return;
+            }
+
+            // 2) Block if label "blocked" exists
+            const labels = (context.payload.issue.labels || [])
+              .map(l => (typeof l === 'string' ? l : l.name))
+              .filter(Boolean)
+              .map(l => l.toLowerCase());
+
+            if (labels.includes('blocked')) {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number,
+                body: `⛔ Sorry @${assignee} — this issue is currently **blocked** and can’t be claimed yet.`,
+              });
+              return;
+            }
+
+            // 3) Assign
+            await github.rest.issues.addAssignees({
+              owner, repo, issue_number,
+              assignees: [assignee],
+            });
+
+            await github.rest.issues.createComment({
+              owner, repo, issue_number,
+              body: `🎉 Thank you for your interest in contributing!\n\nThe issue has been assigned to @${assignee}. Happy coding!`,
+            });

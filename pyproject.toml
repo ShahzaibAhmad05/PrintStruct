@@ -1,6 +1,20 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "PrintStruct"
-version = "1.1.0"
+version = "1.2.3"
+description = "PrintStruct: print project structure and optionally zip it"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "Shahzaib Ahmad" }]
+dependencies = ["pathspec>=0.11"]
 
 [project.scripts]
 prst = "main:main"
+printstruct = "main:main"
+
+[tool.setuptools]
+py-modules = ["main"]
