@@ -1,5 +1,7 @@
 PrintStruct.egg-info
+structure.egg-info
 __pycache__
 myenv/
+venv/
 .env/
 .vscode/
