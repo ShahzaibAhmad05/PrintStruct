@@ -13,7 +13,7 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--max-items", type=max_items_int, default=20, help="Limit items shown per directory (default: 20). Use --no-limit for unlimited.")
     ap.add_argument("--version", "-v", action="store_true", help="Display the version of the tool")
     ap.add_argument("--zip", default=None, help="Create a zip file containing files under path (respects .gitignore)")
-    ap.add_argument("--output", "-o", default=None, help="Save tree structure to file")
+    ap.add_argument("--out", "-o", default=None, help="Save tree structure to file")
     ap.add_argument("--copy", "-c", action="store_true", help="Copy tree output to clipboard")
     ap.add_argument("--no-limit", action="store_true", help="Show all items regardless of count")
     return ap.parse_args()
