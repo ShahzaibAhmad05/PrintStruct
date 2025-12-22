@@ -15,15 +15,21 @@ def zip_project(
     respect_gitignore: bool,
     gitignore_depth: Optional[int],
     max_depth: Optional[int],
+    mode: str = "w",
+    arcname_prefix: Optional[str] = None,
 ) -> None:
     """
     Create <zip_stem>.zip with all files under root, respecting .gitignore like draw_tree().
     Note: does NOT apply max_items (that limit is only for display).
+
+    Args:
+        mode: 'w' to create new zip, 'a' to append to existing zip (for multiple paths)
+        arcname_prefix: Optional prefix for archive names (used for multiple paths to avoid conflicts)
     """
     gi = GitIgnoreMatcher(root, enabled=respect_gitignore, gitignore_depth=gitignore_depth)
     zip_path = Path(f"{zip_stem}.zip").resolve()
 
-    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as z:
+    with zipfile.ZipFile(zip_path, mode, compression=zipfile.ZIP_DEFLATED) as z:
 
         def rec(dirpath: Path, depth: int, patterns: List[str]) -> None:
             if max_depth is not None and depth >= max_depth:
@@ -62,10 +68,15 @@ def zip_project(
                     rec(entry, depth + 1, patterns)
                 else:
                     arcname = entry.relative_to(root).as_posix()
+                    if arcname_prefix:
+                        arcname = f"{arcname_prefix}/{arcname}"
                     z.write(entry, arcname)
 
         if root.is_dir():
             rec(root, 0, [])
         else:
             # single file case
-            z.write(root, root.name)
+            arcname = root.name
+            if arcname_prefix:
+                arcname = f"{arcname_prefix}/{arcname}"
+            z.write(root, arcname)
