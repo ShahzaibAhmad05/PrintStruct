@@ -260,17 +260,8 @@ def main() -> None:
     # If --no-limit is set, disable max_items
     max_items = None if args.no_limit else args.max_items
 
-    draw_tree(
-        root=root,
-        max_depth=args.max_depth,
-        show_all=args.all,
-        extra_ignores=args.ignore,
-        respect_gitignore=not args.no_gitignore,
-        gitignore_depth=args.gitignore_depth,
-        max_items=max_items,
-    )
-
-    if args.zip is not None:        # if zipping is requested
+    # if zipping is requested
+    if args.zip is not None:
         zip_project(
             root=root,
             zip_stem=args.zip,
@@ -280,6 +271,18 @@ def main() -> None:
             gitignore_depth=args.gitignore_depth,
             max_depth=args.max_depth,
         )
+
+    # else, print the tree normally
+    else:
+        draw_tree(
+        root=root,
+        max_depth=args.max_depth,
+        show_all=args.all,
+        extra_ignores=args.ignore,
+        respect_gitignore=not args.no_gitignore,
+        gitignore_depth=args.gitignore_depth,
+        max_items=max_items,
+    )
 
 
 if __name__ == "__main__":
