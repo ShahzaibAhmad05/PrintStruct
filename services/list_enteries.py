@@ -1,6 +1,6 @@
 from typing import List, Optional, Tuple
 from pathlib import Path
-from services.git_ignore import GitIgnoreMatcher
+from utilities.gitignore import GitIgnoreMatcher
 from utilities.utils import iter_dir, matches_extra
 import pathspec
 

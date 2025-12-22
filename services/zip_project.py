@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import List, Optional
-from services.git_ignore import GitIgnoreMatcher
+from utilities.gitignore import GitIgnoreMatcher
 from services.list_enteries import list_entries
 import zipfile
 import pathspec

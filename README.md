@@ -1,133 +1,113 @@
 # PrintStruct
 
-**PrintStruct** is a clean, lightweight Python CLI that prints a clean directory tree of your project **while respecting `.gitignore`** with optional zipping.
+**PrintStruct** is a clean, lightweight Python CLI that prints a directory tree of your project **while respecting `.gitignore`**, with optional zipping support.
 
 The problems it solves:
 
-- sharing project structure in issues or pull requests
-- generating clean trees for documentation
-- pasting project layouts into ChatGPT / LLMs
-- creating zip files for LLMs using gitignore directions.
+* sharing project structure in issues or pull requests
+* generating directory trees for documentation
+* pasting project layouts into LLMs
+* zipping projects for feeding to LLMs using `.gitignore` directions
 
 <br>
 
-## Quick Start (10 seconds) 
+## Quick Start (10 seconds)
 
 ### Installation using pip (recommended):
 
-- Run this command in your terminal:
+Run this command in your terminal:
 
-````
+```
 pip install printstruct
-````
-
+```
 
 ### Usage:
 
-- Open a terminal in any project (any time) and run:
+Open a terminal in any project and run:
 
-````
+```
 prst
-````
+```
 
-This will print the whole structure of the repository as shown. In fact, You can also just type:
- 
-````
+This prints the directory structure of the current folder.
+
+You can also specify a path explicitly:
+
+```
 prst <directory_path>
-````
+```
 
-in any terminal to get the structure of the directory printed.
+Example (Windows PowerShell):
 
-- Example usage (on windows powershell):
-
-````
+```
 PS C:/Users/Projects/PrintStruct> prst .
-````
+```
 
-outputs:
+Output:
 
-````
+```
 PrintStruct
 ├─ LICENSE
 ├─ pyproject.toml
 ├─ README.md
 ├─ requirements.txt
 └─ structure.py
-````
+```
 
-### For Updates:
+### Updating PrintStruct:
 
-To update the tool simply reinstall it with pip, but with the latest release version. Pip will automatically handle old version removal.
-
-
-### Installation (for Contributors):
-
-- Clone the repository (main branch):
-
-````
-git clone https://github.com/ShahzaibAhmad05/PrintStruct
-````
-
-- Move your terminal to the project
-
-````
-cd PrintStruct
-````
-
-- Install the project on your system (globally) using pip:
-
-````
-pip install -r requirements.txt
-````
-
-and Done! The tool is installed as a python script on your system.
+To update the tool, reinstall it using pip. Pip will automatically replace the older version with the latest release.
 
 <br>
 
-## Useful CLI args
+## Useful CLI arguments
 
-*Other than the directory path*, here are some CLI args you can use with this script:
+In addition to the directory path, the following options are available:
 
-**--version** or **-v**
+| Argument | Description |
+|--------|-------------|
+| `--version`, `-v` | Displays the installed version. |
+| `--zip [name]` | Zips the project while respecting `.gitignore`. Example: `--zip a` creates `a.zip`. If no name is provided, a random ID is used. |
+| `--max-depth` | Limits recursion depth. Example: `--max-depth 1` shows only top-level files and folders. |
+| `--all`, `-a` | Includes hidden files and directories. Does not override `.gitignore`. |
+| `--ignore` | Adds extra files or directories to ignore. |
+| `--gitignore-depth` | Controls how deeply `.gitignore` files are discovered. Example: `--gitignore-depth 0` uses only the root `.gitignore`. |
+| `--no-gitignore` | Ignores all `.gitignore` rules when set. |
+| `--max-items` | Limits items shown per directory. Extra items are summarized as `... and x more items`. Default: `20`. |
+| `--no-limit` | Removes the per-directory item limit. |
 
-Displays the version of the tool installed on the system.
 
-**--zip**
+<br>
 
-Zips the project, respecting gitignores. For example, `--zip a` should create `a.zip` in the same directory having the directory contents. If zip name is not given, it defaults to a random ID.
+<br>
 
-**--max-depth**
+## Installation (for Contributors)
 
-Limits how deep the directory recursion gets. For example, `--max-depth 1` should print the files and folders directly visible from the project root.
+Clone the repository:
 
-**--all** or **-a**
+```
+git clone https://github.com/ShahzaibAhmad05/PrintStruct
+```
 
-Includes hidden files and folders in the results. This does not override gitignore directives.
+Move into the project directory:
 
-**--ignore** 
+```
+cd PrintStruct
+```
 
-Adds further files or folders to ignore.
+Install dependencies:
 
-**--gitignore-depth**
+```
+pip install -r requirements.txt
+```
 
-Controls how deep the script looks for gitignore files. For example, `--gitignore-depth 0` should include only the gitignore present at the project root.
-
-**--no-gitignore** 
-
-Does not respect gitignore files if this flag is given.
-
-**--max-items**
-
-Max number of files/folders to display in each folder, the rest is shown as `... and x more items`. For example `--max-items 5` should display only 5 items per directory. 
-
-Default for max items is 20.
-
-**--no-limit**
-
-Remove the `--max-items` limiter on printing files. 
+The tool is now available as a Python CLI on your system.
 
 <br>
 
 ## Contributions
 
-Please feel free to open issues or submit pull requests to improve formatting, add features (e.g. colorized output), or add tests.
+Issues and pull requests are welcome.
+Ideas that would fit well include improved formatting, colorized output, test coverage, and performance optimizations.
+
+PrintStruct is intentionally small and readable, so contributions that preserve simplicity are especially appreciated.
