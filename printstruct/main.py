@@ -35,7 +35,8 @@ def main() -> None:
     if args.output is not None:     # TODO: relocate this code for file output
         # Determine filename
         filename = args.output
-        if not filename.endswith(('.txt', '.md')):
+        # Add .txt extension only if no extension provided
+        if not Path(filename).suffix:
             filename += '.txt'
 
     if args.copy or args.output is not None:
@@ -67,8 +68,14 @@ def main() -> None:
         )
         if args.output is not None:     # that file output code again
             # Write to file
+            content = output_buffer.getvalue()
+
+            # Wrap in markdown code block if .md extension
+            if filename.endswith('.md'):
+                content = f"```\n{content}```\n"
+
             with open(filename, 'w', encoding='utf-8') as f:
-                f.write(output_buffer.getvalue())
+                f.write(content)
 
         if args.copy:       # Capture output if needed for clipboard
             pyperclip.copy(output_buffer.getvalue() + "\n")
