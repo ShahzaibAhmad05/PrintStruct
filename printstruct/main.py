@@ -54,12 +54,12 @@ def main() -> None:
             extra_ignores=args.ignore,
             respect_gitignore=not args.no_gitignore,
             gitignore_depth=args.gitignore_depth,
-            max_depth=args.max_depth,
+            depth=args.depth,
         )
     else:       # else, print the tree normally
         draw_tree(
             root=root,
-            max_depth=args.max_depth,
+            depth=args.depth,
             show_all=args.all,
             extra_ignores=args.ignore,
             respect_gitignore=not args.no_gitignore,

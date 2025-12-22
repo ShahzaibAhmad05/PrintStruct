@@ -9,7 +9,7 @@ import pathspec
 def draw_tree(
     root: Path,
     *,
-    max_depth: Optional[int],
+    depth: Optional[int],
     show_all: bool,
     extra_ignores: List[str],
     respect_gitignore: bool,
@@ -20,8 +20,8 @@ def draw_tree(
 
     print(root.name)
 
-    def rec(dirpath: Path, prefix: str, depth: int, patterns: List[str]) -> None:
-        if max_depth is not None and depth >= max_depth:
+    def rec(dirpath: Path, prefix: str, current_depth: int, patterns: List[str]) -> None:
+        if depth is not None and current_depth >= depth:
             return
 
         if respect_gitignore and gi.within_depth(dirpath):
@@ -57,7 +57,7 @@ def draw_tree(
             print(prefix + connector + entry.name + suffix)
 
             if entry.is_dir():
-                rec(entry, prefix + (SPACE if is_last else VERT), depth + 1, patterns)
+                rec(entry, prefix + (SPACE if is_last else VERT),  current_depth + 1, patterns)
 
         # Show truncation message if items were hidden
         if truncated > 0:
