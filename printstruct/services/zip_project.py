@@ -15,6 +15,7 @@ def zip_project(
     respect_gitignore: bool,
     gitignore_depth: Optional[int],
     max_depth: Optional[int],
+    ignore_depth: Optional[int] = None,
 ) -> None:
     """
     Create <zip_stem>.zip with all files under root, respecting .gitignore like draw_tree().
@@ -55,6 +56,7 @@ def zip_project(
                 show_all=show_all,
                 extra_ignores=extra_ignores,
                 max_items=None,
+                ignore_depth=ignore_depth,
             )
 
             for entry in entries:

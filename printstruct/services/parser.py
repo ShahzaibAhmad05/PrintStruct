@@ -8,6 +8,7 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--depth", type=int, default=None)
     ap.add_argument("--all", "-a", action="store_true")
     ap.add_argument("--ignore", nargs="*", default=[])
+    ap.add_argument("--ignore-depth", type=int, default=None, help="Limit depth for --ignore patterns")
     ap.add_argument("--gitignore-depth", type=int, default=None)
     ap.add_argument("--no-gitignore", action="store_true")
     ap.add_argument("--max-items", type=max_items_int, default=20, help="Limit items shown per directory (default: 20). Use --no-limit for unlimited.")

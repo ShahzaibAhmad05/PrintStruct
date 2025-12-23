@@ -4,7 +4,7 @@ import os
 import fnmatch
 import tomllib
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 
 def max_items_int(v: str) -> int:
@@ -39,7 +39,16 @@ def iter_dir(directory: Path) -> List[Path]:
         return []
 
 
-def matches_extra(p: Path, root: Path, patterns: List[str]) -> bool:
+def matches_extra(p: Path, root: Path, patterns: List[str], ignore_depth: Optional[int] = None) -> bool:
+    # Check if path is within ignore_depth
+    if ignore_depth is not None:
+        try:
+            depth = len(p.relative_to(root).parts)
+            if depth > ignore_depth:
+                return False
+        except Exception:
+            pass
+
     try:
         rel = p.relative_to(root).as_posix()
     except Exception:

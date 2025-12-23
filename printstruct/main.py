@@ -54,6 +54,7 @@ def main() -> None:
             extra_ignores=args.ignore,
             respect_gitignore=not args.no_gitignore,
             gitignore_depth=args.gitignore_depth,
+            ignore_depth=args.ignore_depth,
             depth=args.depth,
         )
     else:       # else, print the tree normally
@@ -65,6 +66,7 @@ def main() -> None:
             respect_gitignore=not args.no_gitignore,
             gitignore_depth=args.gitignore_depth,
             max_items=max_items,
+            ignore_depth=args.ignore_depth,
         )
         if args.out is not None:     # that file output code again
             # Write to file

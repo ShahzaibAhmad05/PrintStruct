@@ -103,6 +103,12 @@ pip install -r requirements.txt
 
 The tool is now available as a Python CLI on your system.
 
+For running directly from main without installing:
+
+```
+python -m printstruct.main
+```
+
 <br>
 
 ## Contributions

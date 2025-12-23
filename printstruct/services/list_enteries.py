@@ -14,6 +14,7 @@ def list_entries(
     show_all: bool,
     extra_ignores: List[str],
     max_items: Optional[int] = None,
+    ignore_depth: Optional[int] = None,
 ) -> Tuple[List[Path], int]:
     out: List[Path] = []
     for e in iter_dir(directory):
@@ -21,7 +22,7 @@ def list_entries(
             continue
         if gi.is_ignored(e, spec):
             continue
-        if matches_extra(e, root, extra_ignores):
+        if matches_extra(e, root, extra_ignores, ignore_depth):
             continue
         out.append(e)
 
