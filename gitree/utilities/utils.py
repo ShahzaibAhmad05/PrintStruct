@@ -1,8 +1,8 @@
 import argparse
 import random
 import os
-import fnmatch
 import tomllib
+import pathspec
 from pathlib import Path
 from typing import List, Optional
 
@@ -40,6 +40,12 @@ def iter_dir(directory: Path) -> List[Path]:
 
 
 def matches_extra(p: Path, root: Path, patterns: List[str], ignore_depth: Optional[int] = None) -> bool:
+    """Check if path matches any of the extra ignore patterns using gitignore-style matching."""
+
+    # If no patterns provided, nothing matches
+    if not patterns:
+        return False
+
     # Check if path is within ignore_depth
     if ignore_depth is not None:
         try:
@@ -49,11 +55,22 @@ def matches_extra(p: Path, root: Path, patterns: List[str], ignore_depth: Option
         except Exception:
             pass
 
+    # Create PathSpec from patterns
+    spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
+
+    # Get relative path (same logic as GitIgnoreMatcher)
     try:
         rel = p.relative_to(root).as_posix()
     except Exception:
         rel = p.name
-    return any(fnmatch.fnmatchcase(rel, pat) or fnmatch.fnmatchcase(p.name, pat) for pat in patterns)
+
+    # Check if pattern matches (handle directories with trailing /)
+    if spec.match_file(rel):
+        return True
+    if p.is_dir() and spec.match_file(rel + "/"):
+        return True
+
+    return False
 
 
 def get_project_version() -> str:
