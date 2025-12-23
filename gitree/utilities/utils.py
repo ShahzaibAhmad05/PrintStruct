@@ -57,8 +57,5 @@ def matches_extra(p: Path, root: Path, patterns: List[str], ignore_depth: Option
 
 
 def get_project_version() -> str:
-    """ Get the version of the tool from pyproject.toml """
-    with open("pyproject.toml","rb") as f:
-        data = tomllib.load(f)
-
-    return data["project"]["version"]
+    """Returns the current version of the project"""
+    return "0.1.2"

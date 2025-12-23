@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gitree"
-version = "1.0.0"
+version = "0.1.0"
 description = "Gitree: git-aware project tree printing and zipping for docs and LLMs"
 readme = "README.md"
 requires-python = ">=3.8"

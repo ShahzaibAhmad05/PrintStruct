@@ -5,7 +5,7 @@ if sys.platform.startswith('win'):      # fix windows unicode error on CI
     sys.stdout.reconfigure(encoding='utf-8')
 
 from pathlib import Path
-from .services.draw_tree import draw_tree
+from .services.draw_tree import draw_tree, print_summary 
 from .services.zip_project import zip_project
 from .services.parser import parse_args
 from .utilities.utils import get_project_version
@@ -56,6 +56,7 @@ def main() -> None:
             gitignore_depth=args.gitignore_depth,
             ignore_depth=args.ignore_depth,
             depth=args.depth,
+            no_files=args.no_files,
         )
     else:       # else, print the tree normally
         draw_tree(
@@ -67,7 +68,13 @@ def main() -> None:
             gitignore_depth=args.gitignore_depth,
             max_items=max_items,
             ignore_depth=args.ignore_depth,
+            no_files=args.no_files,
+            emoji=args.emoji,
         )
+
+        if args.summary:        # call summary if requested
+            print_summary(root)
+
         if args.out is not None:     # that file output code again
             # Write to file
             content = output_buffer.getvalue()
@@ -85,3 +92,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

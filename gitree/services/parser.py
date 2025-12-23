@@ -17,4 +17,7 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--out", "-o", default=None, help="Save tree structure to file")
     ap.add_argument("--copy", "-c", action="store_true", help="Copy tree output to clipboard")
     ap.add_argument("--no-limit", action="store_true", help="Show all items regardless of count")
+    ap.add_argument("--no-files", action="store_true", help="Hide files from the tree (only show directories)")
+    ap.add_argument("--emoji", action="store_false", help="Show emojis in tree output")
+    ap.add_argument("--summary",action="store_true",help="Print a summary of the number of files and folders at each level")
     return ap.parse_args()

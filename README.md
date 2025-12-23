@@ -1,72 +1,123 @@
 # Gitree
 
-A git-aware (but not git-required) project tree printer **and zipper** for documentation, PRs and LLM workflows.
+**A git-aware CLI tool to provide LLM context for coding projects by combining project files into a single file with a number of different formats to choose from.**
+
+<br>
 
 The problems it solves:
 
 * sharing project structure in issues or pull requests
 * generating directory trees for documentation
 * pasting project layouts into LLMs
-* **zipping projects using `.gitignore` rules for safe sharing with LLMs**
+* **converting entire codebases to a single json file using `.gitignore` for prompting LLMs.**
 
 <br>
 
-## Quick Start (10 seconds)
-
-### Installation using pip (recommended):
+## Installation:
 
 Run this command in your terminal:
 
 ```
-pip install gitree
+# Install using pip
+pip install gitree       
 ```
 
 ### Usage:
 
+To use this tool, refer to this format:
+
+```
+gitree [path] [other CLI args/flags]
+```
+
 Open a terminal in any project and run:
 
 ```
-gitree
+# path should default to .
+gitree                  
 ```
 
-This prints the directory structure of the current folder.
-
-You can also specify a path explicitly:
-
-```
-gitree <directory_path>
-```
-
-Example on Windows PowerShell:
-
-```
-PS C:/Users/Projects/Gitree> gitree .
-```
-
-**Note:** The dot after the name call is **not required**. It is default.
-
-Output:
+Example output:
 
 ```
 Gitree
+├─ gitree/
+│  ├─ constants/
+│  │  ├─ __init__.py
+│  │  └─ constant.py
+│  ├─ services/
+│  │  ├─ __init__.py
+│  │  ├─ draw_tree.py
+│  │  ├─ list_enteries.py
+│  │  ├─ parser.py
+│  │  └─ zip_project.py
+│  ├─ utilities/
+│  │  ├─ __init__.py
+│  │  ├─ gitignore.py
+│  │  └─ utils.py
+│  ├─ __init__.py
+│  └─ main.py
+├─ CODE_OF_CONDUCT.md
+├─ CONTRIBUTING.md
 ├─ LICENSE
 ├─ pyproject.toml
 ├─ README.md
 ├─ requirements.txt
-└─ structure.py
+└─ SECURITY.md
+```
+
+Using emojis as file/directory icons:
+
+```
+gitree --emoji
+```
+
+Example output:
+
+```
+Gitree
+├─ 📂 gitree/
+│  ├─ 📂 constants/
+│  │  ├─ 📄 __init__.py
+│  │  └─ 📄 constant.py
+│  ├─ 📂 services/
+│  │  ├─ 📄 __init__.py
+│  │  ├─ 📄 draw_tree.py
+│  │  ├─ 📄 list_enteries.py
+│  │  ├─ 📄 parser.py
+│  │  └─ 📄 zip_project.py
+│  ├─ 📂 utilities/
+│  │  ├─ 📄 __init__.py
+│  │  ├─ 📄 gitignore.py
+│  │  └─ 📄 utils.py
+│  ├─ 📄 __init__.py
+│  └─ 📄 main.py
+├─ 📄 CODE_OF_CONDUCT.md
+├─ 📄 CONTRIBUTING.md
+├─ 📄 LICENSE
+├─ 📄 pyproject.toml
+├─ 📄 README.md
+├─ 📄 requirements.txt
+└─ 📄 SECURITY.md
 ```
 
 For zipping a directory:
 
 ```
-gitree . --zip out
+gitree --zip out
 ```
 
 creates out.zip in the same directory.
 
 ### Updating Gitree:
 
-To update the tool, reinstall it using pip. Pip will automatically replace the older version with the latest release.
+To update the tool, type:
+
+```
+pip install -U gitree
+```
+
+Pip will automatically replace the older version with the latest release.
 
 <br>
 
@@ -74,17 +125,19 @@ To update the tool, reinstall it using pip. Pip will automatically replace the o
 
 In addition to the directory path, the following options are available:
 
-| Argument | Description |
-|--------|-------------|
-| `--version`, `-v` | Displays the installed version. |
-| `--zip [name]` | Zips the project while respecting `.gitignore`. Example: `--zip a` creates `a.zip`. If no name is provided, a random ID is used. |
-| `--depth` | Limits recursion depth. Example: `--depth 1` shows only top-level files and folders. |
-| `--all`, `-a` | Includes hidden files and directories. Does not override `.gitignore`. |
-| `--ignore` | Adds extra files or directories to ignore. |
+| Argument            | Description |
+|---------------------|-------------|
+| `--version`, `-v`   | Displays the installed version. |
+| `--zip [name]`      | Zips the project while respecting `.gitignore`. Example: `--zip a` creates `a.zip`. If no name is provided, a random ID is used. |
+| `--depth`           | Limits recursion depth. Example: `--depth 1` shows only top-level files and folders. |
+| `--all`, `-a`       | Includes hidden files and directories. Does not override `.gitignore`. |
+| `--ignore`          | Adds extra files or directories to ignore. |
 | `--gitignore-depth` | Controls how deeply `.gitignore` files are discovered. Example: `--gitignore-depth 0` uses only the root `.gitignore`. |
-| `--no-gitignore` | Ignores all `.gitignore` rules when set. |
-| `--max-items` | Limits items shown per directory. Extra items are summarized as `... and x more items`. Default: `20`. |
-| `--no-limit` | Removes the per-directory item limit. |
+| `--no-gitignore`    | Ignores all `.gitignore` rules when set. |
+| `--max-items`       | Limits items shown per directory. Extra items are summarized as `... and x more items`. Default: `20`. |
+| `--no-limit`        | Removes the per-directory item limit. |
+| `--no-file`         | Hide files from the tree (only show directories) |
+| `--emoji`           | Show emojis in tree output |
 
 
 <br>
