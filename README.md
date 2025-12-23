@@ -74,17 +74,19 @@ To update the tool, reinstall it using pip. Pip will automatically replace the o
 
 In addition to the directory path, the following options are available:
 
-| Argument | Description |
-|--------|-------------|
-| `--version`, `-v` | Displays the installed version. |
-| `--zip [name]` | Zips the project while respecting `.gitignore`. Example: `--zip a` creates `a.zip`. If no name is provided, a random ID is used. |
-| `--depth` | Limits recursion depth. Example: `--depth 1` shows only top-level files and folders. |
-| `--all`, `-a` | Includes hidden files and directories. Does not override `.gitignore`. |
-| `--ignore` | Adds extra files or directories to ignore. |
+| Argument            | Description |
+|---------------------|-------------|
+| `--version`, `-v`   | Displays the installed version. |
+| `--zip [name]`      | Zips the project while respecting `.gitignore`. Example: `--zip a` creates `a.zip`. If no name is provided, a random ID is used. |
+| `--depth`           | Limits recursion depth. Example: `--depth 1` shows only top-level files and folders. |
+| `--all`, `-a`       | Includes hidden files and directories. Does not override `.gitignore`. |
+| `--ignore`          | Adds extra files or directories to ignore. |
 | `--gitignore-depth` | Controls how deeply `.gitignore` files are discovered. Example: `--gitignore-depth 0` uses only the root `.gitignore`. |
-| `--no-gitignore` | Ignores all `.gitignore` rules when set. |
-| `--max-items` | Limits items shown per directory. Extra items are summarized as `... and x more items`. Default: `20`. |
-| `--no-limit` | Removes the per-directory item limit. |
+| `--no-gitignore`    | Ignores all `.gitignore` rules when set. |
+| `--max-items`       | Limits items shown per directory. Extra items are summarized as `... and x more items`. Default: `20`. |
+| `--no-limit`        | Removes the per-directory item limit. |
+| `--no-file`         | Hide files from the tree (only show directories) |
+| `--no-emoji`        | Hide emojis from tree output (only show plain tree) |
 
 
 <br>
