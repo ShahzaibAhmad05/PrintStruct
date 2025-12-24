@@ -20,4 +20,7 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--no-files", action="store_true", help="Hide files from the tree (only show directories)")
     ap.add_argument("--emoji", action="store_false", help="Show emojis in tree output")
     ap.add_argument("--summary",action="store_true",help="Print a summary of the number of files and folders at each level")
+    ap.add_argument("--init-config", action="store_true", help="Create a default config.json file in the current directory")
+    ap.add_argument("--config-user", action="store_true", help="Open config.json in the default editor")
+    ap.add_argument("--no-config", action="store_true", help="Ignore config.json and use hardcoded defaults")
     return ap.parse_args()
