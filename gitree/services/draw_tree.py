@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Set
 from ..utilities.gitignore import GitIgnoreMatcher
 from ..services.list_enteries import list_entries
 from ..constants.constant import (BRANCH, LAST, SPACE, VERT, 
@@ -21,6 +21,7 @@ def draw_tree(
     ignore_depth: Optional[int] = None,
     no_files: bool = False,
     emoji: bool = False,
+    whitelist: Optional[Set[str]] = None,
 ) -> None:
     gi = GitIgnoreMatcher(root, enabled=respect_gitignore, gitignore_depth=gitignore_depth)
 
@@ -57,6 +58,25 @@ def draw_tree(
             ignore_depth=ignore_depth,
             no_files=no_files,
         )
+
+        filtered_entries = []
+        for entry in entries:
+            entry_path = str(entry.absolute())
+            if whitelist is not None:
+                # If it's a file, it must be in the whitelist
+                if entry.is_file():
+                   if entry_path not in whitelist:
+                       continue
+                # If it's a dir, it must contain whitelisted files
+                elif entry.is_dir():
+                   # check if any whitelisted file starts with this dir path
+                   if not any(f.startswith(entry_path) for f in whitelist):
+                       continue
+            filtered_entries.append(entry)
+        
+        entries = filtered_entries
+
+
 
         for i, entry in enumerate(entries):
             is_last = i == len(entries) - 1 and truncated == 0

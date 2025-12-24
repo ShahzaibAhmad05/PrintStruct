@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Set
 from ..utilities.gitignore import GitIgnoreMatcher
 from ..services.list_enteries import list_entries
 import zipfile
@@ -17,6 +17,7 @@ def zip_project(
     depth: Optional[int],
     ignore_depth: Optional[int] = None,
     no_files: bool = False,
+    whitelist: Optional[Set[str]] = None,
 ) -> None:
     """
     Create <zip_stem>.zip with all files under root, respecting .gitignore like draw_tree().
@@ -62,6 +63,15 @@ def zip_project(
             )
 
             for entry in entries:
+                if whitelist is not None:
+                     entry_path = str(entry.absolute())
+                     if entry.is_file():
+                         if entry_path not in whitelist:
+                             continue
+                     elif entry.is_dir():
+                         if not any(f.startswith(entry_path) for f in whitelist):
+                             continue
+
                 if entry.is_dir():
                     rec(entry, rec_depth + 1, patterns)
                 else:

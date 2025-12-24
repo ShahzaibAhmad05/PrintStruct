@@ -1,22 +1,63 @@
-# main.py
 from __future__ import annotations
 import sys, io
 if sys.platform.startswith('win'):      # fix windows unicode error on CI
     sys.stdout.reconfigure(encoding='utf-8')
 
 from pathlib import Path
-from .services.draw_tree import draw_tree, print_summary 
+from .services.draw_tree import draw_tree, print_summary
 from .services.zip_project import zip_project
 from .services.parser import parse_args
 from .utilities.utils import get_project_version, copy_to_clipboard
+from .utilities.config import load_config, create_default_config, open_config_in_editor, get_default_config
 
 
 def main() -> None:
     args = parse_args()
 
+    # Handle config + version commands that exit immediately
+    if args.init_config:
+        create_default_config()
+        return
+
+    if args.config_user:
+        open_config_in_editor()
+        return
+
     if args.version:
         print(get_project_version())
         return
+
+    # Load config file if it exists and --no-config is not set
+    if not args.no_config:
+        config = load_config()
+        if config:      # If the user has setup a configuration file
+            defaults = get_default_config()
+
+            # Merge config values with args (CLI args take precedence)
+            # Only use config value if arg is still at its default value
+            if args.max_items == defaults["max_items"] and "max_items" in config:
+                args.max_items = config["max_items"]
+            if args.max_depth == defaults["depth"] and "depth" in config:
+                args.max_depth = config["depth"]
+            if args.gitignore_depth == defaults["gitignore_depth"] and "gitignore_depth" in config:
+                args.gitignore_depth = config["gitignore_depth"]
+            if args.ignore_depth == defaults["ignore_depth"] and "ignore_depth" in config:
+                args.ignore_depth = config["ignore_depth"]
+            if args.emoji == defaults["emoji"] and "emoji" in config:  
+                # Note: --emoji flag uses action="store_false" (inverted)
+                # Config uses intuitive naming: true = show emojis
+                # But args.emoji is inverted: False = show emojis
+                args.emoji = not config["emoji"]
+            if args.all == defaults["show_all"] and "show_all" in config:
+                args.all = config["show_all"]
+            if args.no_gitignore == defaults["no_gitignore"] and "no_gitignore" in config:
+                args.no_gitignore = config["no_gitignore"]
+            if args.no_files == defaults["no_files"] and "no_files" in config:
+                args.no_files = config["no_files"]
+            if args.no_limit == defaults["no_limit"] and "no_limit" in config:
+                args.no_limit = config["no_limit"]
+            if args.summary == defaults["summary"] and "summary" in config:
+                args.summary = config["summary"]
 
     root = Path(args.path).resolve()
     if not root.exists():
@@ -39,6 +80,22 @@ def main() -> None:
         original_stdout = sys.stdout
         sys.stdout = output_buffer
 
+    # If interactive mode is enabled
+    selected_files = None
+    if args.interactive:
+        from .services.interactive import select_files
+        selected_files = select_files(
+            root=root,
+            respect_gitignore=not args.no_gitignore,
+            gitignore_depth=args.gitignore_depth,
+            extra_ignores=args.ignore,
+            include_patterns=args.include,
+            exclude_patterns=args.exclude
+        )
+        if not selected_files:
+            print("No files selected. Exiting.")
+            return
+
     # if zipping is requested
     if args.zip is not None:
         zip_project(
@@ -49,13 +106,14 @@ def main() -> None:
             respect_gitignore=not args.no_gitignore,
             gitignore_depth=args.gitignore_depth,
             ignore_depth=args.ignore_depth,
-            depth=args.depth,
+            depth=args.max_depth,
             no_files=args.no_files,
+            whitelist=selected_files
         )
     else:       # else, print the tree normally
         draw_tree(
             root=root,
-            depth=args.depth,
+            depth=args.max_depth,
             show_all=args.all,
             extra_ignores=args.ignore,
             respect_gitignore=not args.no_gitignore,
@@ -64,6 +122,7 @@ def main() -> None:
             ignore_depth=args.ignore_depth,
             no_files=args.no_files,
             emoji=args.emoji,
+            whitelist=selected_files
         )
 
         if args.summary:        # call summary if requested
