@@ -117,6 +117,51 @@ gitree --zip out
 
 creates out.zip in the same directory.
 
+## 🧭 Interactive Mode
+
+Gitree supports an **interactive mode** that allows you to select files and directories step-by-step instead of relying only on CLI flags.
+
+This is useful when:
+- you want fine-grained control over included files
+- you prefer a guided terminal-based selection flow
+- you want to explore a project before exporting its structure
+
+### Enable Interactive Mode
+
+Use the `-i` or `--interactive` flag:
+
+    gitree --interactive
+    # or
+    gitree -i
+
+### How It Works
+
+When interactive mode is enabled, Gitree will:
+
+1. Scan the project directory (respecting `.gitignore`)
+2. Present an interactive file and folder selection menu
+3. Allow you to choose what to include or exclude
+4. Generate output based on your selections
+
+### Interactive Controls
+
+During interactive selection, the following keys are supported:
+
+- **↑ / ↓** — navigate items  
+- **Space** — select / deselect item  
+- **Enter** — confirm selection  
+- **Esc / Ctrl+C** — exit interactive mode  
+
+### Example
+
+    gitree -i --emoji --out context.txt
+
+This will:
+- launch interactive selection
+- display output using emojis
+- save the result to `context.txt`
+
+
 ### Updating Gitree:
 
 To update the tool, type:
