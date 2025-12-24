@@ -1,8 +1,6 @@
 import argparse
-import random
-import os
+import random, os, pyperclip, sys
 import fnmatch
-import tomllib
 from pathlib import Path
 from typing import List, Optional
 
@@ -54,6 +52,26 @@ def matches_extra(p: Path, root: Path, patterns: List[str], ignore_depth: Option
     except Exception:
         rel = p.name
     return any(fnmatch.fnmatchcase(rel, pat) or fnmatch.fnmatchcase(p.name, pat) for pat in patterns)
+
+
+def copy_to_clipboard(text: str) -> bool:
+    """
+    Attempts to copy text to clipboard using pyperclip.
+
+    Args:
+      text (str): The text to copy.
+
+    Returns:
+      True if successful, False otherwise.
+    """
+
+    try:        # Try pyperclip
+        pyperclip.copy(text)
+        return True
+    except Exception as e:
+        print("pyperclip failed to copy to clipboard: ", e, file=sys.stderr)
+
+    return False
 
 
 def get_project_version() -> str:

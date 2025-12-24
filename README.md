@@ -2,18 +2,26 @@
 
 **A git-aware CLI tool to provide LLM context for coding projects by combining project files into a single file with a number of different formats to choose from.**
 
-<br>
+## ✨ Features
 
-The problems it solves:
+| Feature | Description |
+|---------|-------------|
+| 📊 **Project Tree Visualization** | Generate clean directory trees with customizable depth and formatting |
+| 🗜️ **Smart Zipping** | Create project archives that automatically respect `.gitignore` rules |
+| 🎯 **Flexible Filtering** | Control what's shown with custom ignore patterns, depth limits, and item caps |
+| 🔍 **Gitignore Integration** | Use `.gitignore` files at any depth level, or disable entirely when needed |
+| 📋 **Multiple Output Formats** | Export to files, copy to clipboard, or display with emoji icons |
+| 📁 **Directory-Only View** | Show just the folder structure without files for high-level overviews |
+| 📈 **Project Summary** | Display file and folder counts at each directory level with summary mode |
+
+## 🔥 The problems it solves:
 
 * sharing project structure in issues or pull requests
 * generating directory trees for documentation
 * pasting project layouts into LLMs
 * **converting entire codebases to a single json file using `.gitignore` for prompting LLMs.**
 
-<br>
-
-## Installation:
+## 📦 Installation
 
 Run this command in your terminal:
 
@@ -22,7 +30,7 @@ Run this command in your terminal:
 pip install gitree       
 ```
 
-### Usage:
+### 💡 Usage
 
 To use this tool, refer to this format:
 
@@ -119,30 +127,29 @@ pip install -U gitree
 
 Pip will automatically replace the older version with the latest release.
 
-<br>
 
-## Useful CLI arguments
+## ⚙️ CLI Arguments
 
 In addition to the directory path, the following options are available:
 
 | Argument            | Description |
 |---------------------|-------------|
 | `--version`, `-v`   | Displays the installed version. |
-| `--zip [name]`      | Zips the project while respecting `.gitignore`. Example: `--zip a` creates `a.zip`. If no name is provided, a random ID is used. |
 | `--depth`           | Limits recursion depth. Example: `--depth 1` shows only top-level files and folders. |
 | `--all`, `-a`       | Includes hidden files and directories. Does not override `.gitignore`. |
 | `--ignore`          | Adds extra files or directories to ignore. |
+| `--ignore-depth`    | Limits depth for `--ignore` patterns. Example: `--ignore-depth 2` applies ignore rules only to first 2 levels. |
 | `--gitignore-depth` | Controls how deeply `.gitignore` files are discovered. Example: `--gitignore-depth 0` uses only the root `.gitignore`. |
 | `--no-gitignore`    | Ignores all `.gitignore` rules when set. |
 | `--max-items`       | Limits items shown per directory. Extra items are summarized as `... and x more items`. Default: `20`. |
 | `--no-limit`        | Removes the per-directory item limit. |
-| `--no-file`         | Hide files from the tree (only show directories) |
-| `--emoji`           | Show emojis in tree output |
+| `--no-files`        | Hide files from the tree (only show directories). |
+| `--emoji`           | Show emojis in tree output. |
+| `--summary`         | Print a summary of the number of files and folders at each level. |
+| `--zip [name]`, `-z` | Zips the project while respecting `.gitignore`. Example: `--zip a` creates `a.zip`. If no name is provided, a random ID is used. |
+| `--out [file]`, `-o` | Save tree structure to file. Example: `--out tree.txt` or `--out tree.md` for markdown format. |
+| `--copy`, `-c`      | Copy tree output to clipboard. |
 
-
-<br>
-
-<br>
 
 ## Installation (for Contributors)
 
@@ -172,11 +179,9 @@ For running directly from main without installing:
 python -m gitree.main
 ```
 
-<br>
 
 ## Contributions
 
-Issues and pull requests are welcome.
-Ideas that would fit well include improved formatting, colorized output, test coverage, and performance optimizations.
+This is **YOUR** tool. Issues and pull requests are welcome.
 
-Gitree is intentionally small and readable, so contributions that preserve simplicity are especially appreciated.
+Gitree is kept intentionally small and readable, so contributions that preserve simplicity are especially appreciated.

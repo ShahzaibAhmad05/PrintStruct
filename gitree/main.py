@@ -1,6 +1,6 @@
 # main.py
 from __future__ import annotations
-import sys, io, pyperclip
+import sys, io
 if sys.platform.startswith('win'):      # fix windows unicode error on CI
     sys.stdout.reconfigure(encoding='utf-8')
 
@@ -8,7 +8,7 @@ from pathlib import Path
 from .services.draw_tree import draw_tree, print_summary 
 from .services.zip_project import zip_project
 from .services.parser import parse_args
-from .utilities.utils import get_project_version
+from .utilities.utils import get_project_version, copy_to_clipboard
 
 
 def main() -> None:
@@ -22,12 +22,6 @@ def main() -> None:
     if not root.exists():
         print(f"Error: path not found: {root}", file=sys.stderr)
         raise SystemExit(1)
-
-    if args.copy and not pyperclip.is_available():
-        print("Could not find a copy mechanism for your system.")
-        print("If you are on Linux, you need to install 'xclip' (on X11) or 'wl-clipboard' (on Wayland).")
-        print("On other enviroments, you need to install qtpy or PyQt5 via pip.")
-        return
         
     # If --no-limit is set, disable max_items
     max_items = None if args.no_limit else args.max_items
@@ -87,9 +81,11 @@ def main() -> None:
                 f.write(content)
 
         if args.copy:       # Capture output if needed for clipboard
-            pyperclip.copy(output_buffer.getvalue() + "\n")
-
+            content = output_buffer.getvalue() + "\n"
+            if not copy_to_clipboard(content):
+                print("Warning: Could not copy to clipboard. Please install a clipboard utility (xclip, wl-copy) or ensure your environment supports it.", file=sys.stderr)
+            # TODO: place an else statement here with a 
+            # success message when verbose is added
 
 if __name__ == "__main__":
     main()
-
