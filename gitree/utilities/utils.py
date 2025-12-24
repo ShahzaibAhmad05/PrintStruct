@@ -75,4 +75,4 @@ def copy_to_clipboard(text: str) -> bool:
 
 def get_project_version() -> str:
     """ Get the version of the tool from pyproject.toml """
-    return "0.1.2"
+    return "0.1.3"
