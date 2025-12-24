@@ -93,4 +93,4 @@ def copy_to_clipboard(text: str) -> bool:
 
 def get_project_version() -> str:
     """Returns the current version of the project"""
-    return "0.1.2"
+    return "0.2.0"
