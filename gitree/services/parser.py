@@ -5,7 +5,7 @@ from ..utilities.utils import max_items_int, get_unused_file_path
 def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(description="Print a directory tree (respects .gitignore).")
     ap.add_argument("path", nargs="?", default=".", help="Root path")
-    ap.add_argument("--depth", type=int, default=None)
+    ap.add_argument("--max-depth", type=int, default=None, help="Maximum depth to traverse")
     ap.add_argument("-a", "--all", action="store_true")
     ap.add_argument("--ignore", nargs="*", default=[])
     ap.add_argument("--ignore-depth", type=int, default=None, help="Limit depth for --ignore patterns")
