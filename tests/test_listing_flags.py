@@ -6,77 +6,81 @@ import unittest
 
 
 class TestListingFlags(unittest.TestCase):
+    
+    def setUp(self):
+        # Create a temp project directory for each test
+        self._tmpdir = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmpdir.name)
+
+        # Base project structure
+        (self.root / "file.txt").write_text("hello")
+
+
+    def tearDown(self):
+        # Cleanup temp directory
+        self._tmpdir.cleanup()
+
+
+    def _run_cli(self, *args):
+        """
+        Helper to run the CLI consistently.
+        - args: extra CLI arguments, e.g. "--max-depth 1"
+        """
+        return subprocess.run(
+            [sys.executable, "-m", "gitree.main", *args],
+            cwd=self.root,
+            capture_output=True,
+            text=True,
+        )
+
+
     def test_entry_point_emoji(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir)
-            (root / "file.txt").write_text("hello")
+        result = self._run_cli("--emoji")
 
-            result = subprocess.run(
-                [sys.executable, "-m", "gitree.main", "--emoji"],
-                cwd=root,
-                capture_output=True,
-                text=True,
-            )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertTrue(result.stdout.strip())
+        self.assertIn("file.txt", result.stdout)
 
-            self.assertEqual(result.returncode, 0)
-            self.assertTrue(result.stdout.strip())
-            self.assertIn("file.txt", result.stdout)
 
     def test_entry_point_no_files(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir)
-            (root / "file.txt").write_text("hello")
-            (root / "folder").mkdir()
-            (root / "folder" / "nested.txt").write_text("nested")
+        # Additional structure specific to this test
+        (self.root / "folder").mkdir()
+        (self.root / "folder" / "nested.txt").write_text("nested")
 
-            result = subprocess.run(
-                [sys.executable, "-m", "gitree.main", "--no-files"],
-                cwd=root,
-                capture_output=True,
-                text=True,
-            )
+        result = self._run_cli("--no-files")
 
-            self.assertEqual(result.returncode, 0)
-            self.assertTrue(result.stdout.strip())
-            self.assertIn("folder", result.stdout)
-            self.assertNotIn("file.txt", result.stdout)
-            self.assertNotIn("nested.txt", result.stdout)
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertTrue(result.stdout.strip())
+        self.assertIn("folder", result.stdout)
+        self.assertNotIn("file.txt", result.stdout)
+        self.assertNotIn("nested.txt", result.stdout)
+
 
     def test_entry_point_max_depth(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir)
-            (root / "file.txt").write_text("hello")
-            (root / "folder").mkdir()
-            (root / "folder" / "nested.txt").write_text("nested")
+        (self.root / "folder").mkdir()
+        (self.root / "folder" / "nested.txt").write_text("nested")
 
-            result = subprocess.run(
-                [sys.executable, "-m", "gitree.main", "--max-depth", "1"],
-                cwd=root,
-                capture_output=True,
-                text=True,
-            )
+        result = self._run_cli("--max-depth", "1")
 
-            self.assertEqual(result.returncode, 0)
-            self.assertTrue(result.stdout.strip())
-            self.assertIn("file.txt", result.stdout)
-            self.assertIn("folder", result.stdout)
-            self.assertNotIn("nested.txt", result.stdout)
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertTrue(result.stdout.strip())
+        self.assertIn("file.txt", result.stdout)
+        self.assertIn("folder", result.stdout)
+        self.assertNotIn("nested.txt", result.stdout)
+
 
     def test_entry_point_no_limit(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir)
-            (root / "folder").mkdir()
-            for i in range(30):  # Since the current default limit is 20
-                (root / "folder" / f"file{i}.txt").write_text("data")
+        # Override base structure for this test
+        (self.root / "file.txt").unlink()
+        (self.root / "folder").mkdir()
 
-            result = subprocess.run(
-                [sys.executable, "-m", "gitree.main", "--no-limit"],
-                cwd=root,
-                capture_output=True,
-                text=True,
-            )
+        for i in range(30):  # default limit is 20
+            (self.root / "folder" / f"file{i}.txt").write_text("data")
 
-            self.assertEqual(result.returncode, 0)
-            self.assertTrue(result.stdout.strip())
-            for i in range(30):
-                self.assertIn(f"file{i}.txt", result.stdout)
+        result = self._run_cli("--no-limit")
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertTrue(result.stdout.strip())
+
+        for i in range(30):
+            self.assertIn(f"file{i}.txt", result.stdout)
