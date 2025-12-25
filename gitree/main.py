@@ -1,5 +1,5 @@
 from __future__ import annotations
-import sys, io
+import sys, io, glob
 if sys.platform.startswith('win'):      # fix windows unicode error on CI
     sys.stdout.reconfigure(encoding='utf-8')
 
@@ -59,11 +59,26 @@ def main() -> None:
             if args.summary == defaults["summary"] and "summary" in config:
                 args.summary = config["summary"]
 
-    root = Path(args.path).resolve()
-    if not root.exists():
-        print(f"Error: path not found: {root}", file=sys.stderr)
-        raise SystemExit(1)
-        
+    # Validate and resolve all paths
+    roots = []
+    for path_str in args.paths:
+        # Check if path contains glob wildcards
+        if '*' in path_str or '?' in path_str:
+            # Expand glob pattern
+            matches = glob.glob(path_str)
+            if not matches:
+                print(f"Error: no matches found for pattern: {path_str}", file=sys.stderr)
+                raise SystemExit(1)
+            for match in matches:
+                roots.append(Path(match).resolve())
+        else:
+            # Regular path without wildcards
+            path = Path(path_str).resolve()
+            if not path.exists():
+                print(f"Error: path not found: {path}", file=sys.stderr)
+                raise SystemExit(1)
+            roots.append(path)
+
     # If --no-limit is set, disable max_items
     max_items = None if args.no_limit else args.max_items
 
@@ -80,53 +95,86 @@ def main() -> None:
         original_stdout = sys.stdout
         sys.stdout = output_buffer
 
-    # If interactive mode is enabled
-    selected_files = None
-    if args.interactive:
-        from .services.interactive import select_files
-        selected_files = select_files(
-            root=root,
-            respect_gitignore=not args.no_gitignore,
-            gitignore_depth=args.gitignore_depth,
-            extra_ignores=args.ignore,
-            include_patterns=args.include,
-            exclude_patterns=args.exclude
-        )
-        if not selected_files:
-            print("No files selected. Exiting.")
-            return
-
     # if zipping is requested
     if args.zip is not None:
-        zip_project(
-            root=root,
-            zip_stem=args.zip,
-            show_all=args.all,
-            extra_ignores=args.ignore,
-            respect_gitignore=not args.no_gitignore,
-            gitignore_depth=args.gitignore_depth,
-            ignore_depth=args.ignore_depth,
-            depth=args.max_depth,
-            no_files=args.no_files,
-            whitelist=selected_files
-        )
-    else:       # else, print the tree normally
-        draw_tree(
-            root=root,
-            depth=args.max_depth,
-            show_all=args.all,
-            extra_ignores=args.ignore,
-            respect_gitignore=not args.no_gitignore,
-            gitignore_depth=args.gitignore_depth,
-            max_items=max_items,
-            ignore_depth=args.ignore_depth,
-            no_files=args.no_files,
-            emoji=args.emoji,
-            whitelist=selected_files
-        )
+        import zipfile
+        zip_path = Path(f"{args.zip}.zip").resolve()
 
-        if args.summary:        # call summary if requested
-            print_summary(root)
+        with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as z:
+            for root in roots:
+                # Interactive mode for each path (if enabled)
+                selected_files = None
+                if args.interactive:
+                    from .services.interactive import select_files
+                    selected_files = select_files(
+                        root=root,
+                        respect_gitignore=not args.no_gitignore,
+                        gitignore_depth=args.gitignore_depth,
+                        extra_ignores=args.ignore,
+                        include_patterns=args.include,
+                        exclude_patterns=args.exclude
+                    )
+                    if not selected_files:
+                        continue
+
+                # Add this root to the zip (in append mode logic)
+                from .services.zip_project import zip_project_to_handle
+                # Only use prefix for directories when multiple roots, not for files
+                prefix = ""
+                if len(roots) > 1 and root.is_dir():
+                    prefix = root.name
+                zip_project_to_handle(
+                    z=z,
+                    root=root,
+                    show_all=args.all,
+                    extra_ignores=args.ignore,
+                    respect_gitignore=not args.no_gitignore,
+                    gitignore_depth=args.gitignore_depth,
+                    ignore_depth=args.ignore_depth,
+                    depth=args.max_depth,
+                    no_files=args.no_files,
+                    whitelist=selected_files,
+                    arcname_prefix=prefix
+                )
+    else:       # else, print the tree normally
+        for i, root in enumerate(roots):
+            # Interactive mode for each path (if enabled)
+            selected_files = None
+            if args.interactive:
+                from .services.interactive import select_files
+                selected_files = select_files(
+                    root=root,
+                    respect_gitignore=not args.no_gitignore,
+                    gitignore_depth=args.gitignore_depth,
+                    extra_ignores=args.ignore,
+                    include_patterns=args.include,
+                    exclude_patterns=args.exclude
+                )
+                if not selected_files:
+                    continue
+
+            # Add header for multiple paths
+            if len(roots) > 1:
+                if i > 0:
+                    print()  # Empty line between trees
+                print(f"=== {root} ===")
+
+            draw_tree(
+                root=root,
+                depth=args.max_depth,
+                show_all=args.all,
+                extra_ignores=args.ignore,
+                respect_gitignore=not args.no_gitignore,
+                gitignore_depth=args.gitignore_depth,
+                max_items=max_items,
+                ignore_depth=args.ignore_depth,
+                no_files=args.no_files,
+                emoji=args.emoji,
+                whitelist=selected_files
+            )
+
+            if args.summary:        # call summary if requested
+                print_summary(root)
 
         if args.output is not None:     # that file output code again
             # Write to file
