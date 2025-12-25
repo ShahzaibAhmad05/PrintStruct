@@ -14,11 +14,11 @@ def build_tree_data(
     *,
     depth: Optional[int],
     show_all: bool,
-    extra_ignores: List[str],
+    extra_excludes: List[str],
     respect_gitignore: bool,
     gitignore_depth: Optional[int],
     max_items: Optional[int] = None,
-    ignore_depth: Optional[int] = None,
+    exclude_depth: Optional[int] = None,
     no_files: bool = False,
     whitelist: Optional[Set[str]] = None,
 ) -> Dict[str, Any]:
@@ -65,9 +65,9 @@ def build_tree_data(
             gi=gi,
             spec=spec,
             show_all=show_all,
-            extra_ignores=extra_ignores,
+            extra_excludes=extra_excludes,
             max_items=max_items,
-            ignore_depth=ignore_depth,
+            exclude_depth=exclude_depth,
             no_files=no_files,
         )
 
