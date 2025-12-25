@@ -67,14 +67,14 @@ def main() -> None:
     # If --no-limit is set, disable max_items
     max_items = None if args.no_limit else args.max_items
 
-    if args.out is not None:     # TODO: relocate this code for file output
+    if args.output is not None:     # TODO: relocate this code for file output
         # Determine filename
-        filename = args.out
+        filename = args.output
         # Add .txt extension only if no extension provided
         if not Path(filename).suffix:
             filename += '.txt'
 
-    if args.copy or args.out is not None:
+    if args.copy or args.output is not None:
         # Capture stdout
         output_buffer = io.StringIO()
         original_stdout = sys.stdout
@@ -128,7 +128,7 @@ def main() -> None:
         if args.summary:        # call summary if requested
             print_summary(root)
 
-        if args.out is not None:     # that file output code again
+        if args.output is not None:     # that file output code again
             # Write to file
             content = output_buffer.getvalue()
 
