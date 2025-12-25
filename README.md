@@ -173,6 +173,25 @@ pip install -U gitree
 Pip will automatically replace the older version with the latest release.
 
 
+## 🧪 Continuous Integration (CI)
+
+Gitree uses Continuous Integration (CI) to ensure code quality and prevent regressions on every change.
+
+### What CI Does
+- Runs automated checks on every pull request
+- Verifies that all CLI arguments work as expected
+- Ensures the tool behaves consistently across updates
+
+### Current Test Coverage
+
+| Test Type | Description |
+|----------|-------------|
+| CLI Argument Tests | Validates all supported CLI flags and options |
+| Workflow Checks | Ensures PRs follow required checks before merging |
+
+> ℹ️ CI tests are continuously expanding as new features are added.
+
+
 ## ⚙️ CLI Arguments
 
 In addition to the directory path, the following options are available:
