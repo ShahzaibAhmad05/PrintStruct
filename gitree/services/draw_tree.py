@@ -25,6 +25,27 @@ def draw_tree(
     include_patterns: List[str] = None,
     include_file_types: List[str] = None,
 ) -> None:
+    """
+    Recursively print a directory tree structure with visual formatting.
+
+    Args:
+        root (Path): Root directory path to start the tree from
+        depth (Optional[int]): Maximum depth to traverse. None for unlimited
+        show_all (bool): If True, include hidden files and directories
+        extra_excludes (List[str]): Additional exclude patterns
+        respect_gitignore (bool): If True, respect .gitignore rules
+        gitignore_depth (Optional[int]): Maximum depth to search for .gitignore files
+        max_items (Optional[int]): Maximum number of items to show per directory
+        exclude_depth (Optional[int]): Depth limit for exclude patterns
+        no_files (bool): If True, only show directories
+        emoji (bool): If True, hide emoji icons in output
+        whitelist (Optional[Set[str]]): Set of file paths to exclusively include
+        include_patterns (List[str]): Patterns for files to include
+        include_file_types (List[str]): File types (extensions) to include
+
+    Returns:
+        None: Prints tree structure to stdout
+    """
     gi = GitIgnoreMatcher(root, enabled=respect_gitignore, gitignore_depth=gitignore_depth)
 
     print(root.name)
@@ -119,6 +140,20 @@ def print_summary(
     include_patterns: List[str] = None,
     include_file_types: List[str] = None,
 ) -> None:
+    """
+    Print a summary showing the count of directories and files at each depth level.
+
+    Args:
+        root (Path): Root directory path to analyze
+        respect_gitignore (bool): If True, respect .gitignore rules. Defaults to True
+        gitignore_depth (Optional[int]): Maximum depth to search for .gitignore files
+        extra_excludes (Optional[List[str]]): Additional exclude patterns
+        include_patterns (List[str]): Patterns for files to include
+        include_file_types (List[str]): File types (extensions) to include
+
+    Returns:
+        None: Prints summary statistics to stdout
+    """
     summary = defaultdict(lambda: {"dirs": 0, "files": 0})
     gi = GitIgnoreMatcher(root, enabled=respect_gitignore, gitignore_depth=gitignore_depth)
     extra_excludes = extra_excludes or []

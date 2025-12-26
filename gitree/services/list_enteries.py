@@ -19,6 +19,25 @@ def list_entries(
     include_patterns: List[str] = None,
     include_file_types: List[str] = None,
 ) -> Tuple[List[Path], int]:
+    """
+    List and filter directory entries based on various criteria.
+
+    Args:
+        directory (Path): Directory to list entries from
+        root (Path): Root directory for relative path calculations
+        gi (GitIgnoreMatcher): GitIgnore matcher instance
+        spec (pathspec.PathSpec): Pathspec for gitignore patterns
+        show_all (bool): If True, include hidden files
+        extra_excludes (List[str]): Additional exclude patterns
+        max_items (Optional[int]): Maximum number of items to return
+        exclude_depth (Optional[int]): Depth limit for exclude patterns
+        no_files (bool): If True, exclude files from results
+        include_patterns (List[str]): Patterns for files to include
+        include_file_types (List[str]): File types (extensions) to include
+
+    Returns:
+        Tuple[List[Path], int]: Tuple of (filtered paths list, count of truncated items)
+    """
     out: List[Path] = []
 
     # Compile include pattern spec if provided

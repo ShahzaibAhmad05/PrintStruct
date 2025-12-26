@@ -6,6 +6,18 @@ from typing import List, Optional
 
 
 def max_items_int(v: str) -> int:
+    """
+    Validate and convert max-items argument to integer.
+
+    Args:
+        v (str): String value from command line argument
+
+    Returns:
+        int: Validated integer between 1 and 10000
+
+    Raises:
+        argparse.ArgumentTypeError: If value is outside valid range
+    """
     n = int(v)
     if n < 1 or n > 10000:
         raise argparse.ArgumentTypeError(
@@ -31,6 +43,15 @@ def get_unused_file_path(root_path: str) -> str:
 
 
 def iter_dir(directory: Path) -> List[Path]:
+    """
+    Safely iterate directory contents handling permission errors.
+
+    Args:
+        directory (Path): Directory path to iterate
+
+    Returns:
+        List[Path]: List of paths in the directory, empty list if permission denied
+    """
     try:
         return list(directory.iterdir())
     except PermissionError:

@@ -15,8 +15,18 @@ def select_files(
     include_file_types: List[str] = None
 ) -> Set[str]:
     """
-    Scans the directory and prompts the user to select files.
-    Returns a set of selected absolute file paths.
+    Present an interactive prompt for users to select files from a directory tree.
+
+    Args:
+        root (Path): Root directory path to scan
+        respect_gitignore (bool): If True, respect .gitignore rules. Defaults to True
+        gitignore_depth (int): Maximum depth to search for .gitignore files
+        extra_excludes (List[str]): Additional exclude patterns
+        include_patterns (List[str]): Patterns for files to include
+        include_file_types (List[str]): File types (extensions) to include
+
+    Returns:
+        Set[str]: Set of selected absolute file paths
     """
     files_to_select = []
 
@@ -37,6 +47,16 @@ def select_files(
         include_spec = pathspec.PathSpec.from_lines("gitwildmatch", include_patterns)
 
     def collect_files(dirpath: Path, patterns: List[str]):
+        """
+        Recursively collect files from directory, applying gitignore and filter rules.
+
+        Args:
+            dirpath (Path): Directory path to scan
+            patterns (List[str]): List of gitignore patterns to apply
+
+        Returns:
+            None: Populates the files_to_select list in the parent scope
+        """
         if respect_gitignore and gi.within_depth(dirpath):
             gi_path = dirpath / ".gitignore"
             if gi_path.is_file():

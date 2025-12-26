@@ -12,6 +12,12 @@ from .utilities.config import load_config, create_default_config, open_config_in
 
 
 def main() -> None:
+    """
+    Main entry point for the gitree CLI tool.
+
+    Handles argument parsing, configuration loading, and orchestrates the main
+    functionality including tree printing, zipping, and file exports.
+    """
     args = parse_args()
 
     # Handle config + version commands that exit immediately

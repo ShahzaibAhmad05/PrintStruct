@@ -3,6 +3,12 @@ import os
 from ..utilities.utils import max_items_int, get_unused_file_path
 
 def parse_args() -> argparse.Namespace:
+    """
+    Parse command-line arguments for the gitree tool.
+
+    Returns:
+        argparse.Namespace: Parsed command-line arguments containing all configuration options
+    """
     ap = argparse.ArgumentParser(description="Print a directory tree (respects .gitignore).")
     ap.add_argument("paths", nargs="*", default=["."], help="Root paths (supports multiple directories and file patterns)")
     ap.add_argument("--max-depth", type=int, default=None, help="Maximum depth to traverse")
