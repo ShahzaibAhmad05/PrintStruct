@@ -1,17 +1,17 @@
 ---
-name: Feature Request
-about: Suggest a new feature for this project
+name: Feature-Change Request
+about: Suggest a change in an existing feature
 title: ''
-labels: feature, good first issue
+labels: change, good first issue
 assignees: ''
 
 ---
 
-## Description of the feature
+## What needs to change
 
 - describe in bullet points
 
-## Suggested Solution (Optional)
+## Why does it need to change
 
 - describe in bullet points
 
