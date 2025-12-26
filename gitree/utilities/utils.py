@@ -242,4 +242,4 @@ def get_language_hint(file_path: Path) -> str:
 
 def get_project_version() -> str:
     """Returns the current version of the project"""
-    return "0.1.2"
+    return "0.0.0"
