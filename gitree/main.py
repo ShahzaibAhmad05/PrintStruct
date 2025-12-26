@@ -197,6 +197,9 @@ def main() -> None:
         if args.json or args.txt or args.md:
             from .services.output_formatters import build_tree_data, write_outputs
 
+            # Include contents by default, unless --no-contents is specified
+            include_contents = not args.no_contents
+
             tree_data = build_tree_data(
                 root=root,
                 depth=args.max_depth,
@@ -207,7 +210,8 @@ def main() -> None:
                 max_items=max_items,
                 exclude_depth=args.exclude_depth,
                 no_files=args.no_files,
-                whitelist=selected_files
+                whitelist=selected_files,
+                include_contents=include_contents
             )
 
             write_outputs(
@@ -215,7 +219,8 @@ def main() -> None:
                 json_path=args.json,
                 txt_path=args.txt,
                 md_path=args.md,
-                emoji=args.emoji
+                emoji=args.emoji,
+                include_contents=include_contents
             )
 
 if __name__ == "__main__":

@@ -28,5 +28,6 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--no-limit", action="store_true", help="Show all items regardless of count")
     ap.add_argument("--no-files", action="store_true", help="Hide files from the tree (only show directories)")
     ap.add_argument("--no-config", action="store_true", help="Ignore config.json and use hardcoded defaults")
-    
+    ap.add_argument("--no-contents", action="store_true", help="Don't include file contents when exporting to JSON, TXT, or MD formats")
+
     return ap.parse_args()

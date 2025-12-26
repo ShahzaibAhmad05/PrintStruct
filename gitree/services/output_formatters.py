@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 from ..utilities.gitignore import GitIgnoreMatcher
+from ..utilities.utils import read_file_contents, get_language_hint
 from ..services.list_enteries import list_entries
 from ..constants.constant import (BRANCH, LAST, SPACE, VERT,
                                   FILE_EMOJI, EMPTY_DIR_EMOJI,
@@ -21,12 +22,16 @@ def build_tree_data(
     exclude_depth: Optional[int] = None,
     no_files: bool = False,
     whitelist: Optional[Set[str]] = None,
+    include_contents: bool = True,
 ) -> Dict[str, Any]:
     """
     Build hierarchical tree structure as dictionary.
 
+    Args:
+        include_contents: If True, include file contents in the tree data (default: True)
+
     Returns:
-        Dict with structure: {"name": str, "type": "file"|"directory", "children": [...]}
+        Dict with structure: {"name": str, "type": "file"|"directory", "children": [...], "contents": str (optional)}
     """
     gi = GitIgnoreMatcher(root, enabled=respect_gitignore, gitignore_depth=gitignore_depth)
 
@@ -90,10 +95,15 @@ def build_tree_data(
         children = []
         for entry in entries:
             if entry.is_file():
-                children.append({
+                file_node = {
                     "name": entry.name,
-                    "type": "file"
-                })
+                    "type": "file",
+                    "path": str(entry.relative_to(root).as_posix())
+                }
+                # Add file contents if requested
+                if include_contents:
+                    file_node["contents"] = read_file_contents(entry)
+                children.append(file_node)
             elif entry.is_dir():
                 child_node = {
                     "name": entry.name,
@@ -122,18 +132,20 @@ def format_json(tree_data: Dict[str, Any]) -> str:
     return json.dumps(tree_data, indent=2, ensure_ascii=False)
 
 
-def format_text_tree(tree_data: Dict[str, Any], emoji: bool = False) -> str:
+def format_text_tree(tree_data: Dict[str, Any], emoji: bool = False, include_contents: bool = False) -> str:
     """
     Convert tree data to text tree format (ASCII art style).
 
     Args:
         tree_data: Hierarchical tree structure
         emoji: If True, don't show emoji icons (matches draw_tree behavior)
+        include_contents: If True, append file contents after the tree
 
     Returns:
-        String with ASCII tree structure
+        String with ASCII tree structure and optionally file contents
     """
     lines = [tree_data["name"]]
+    file_contents_list = []  # Store file paths and contents
 
     def rec(node: Dict[str, Any], prefix: str) -> None:
         children = node.get("children", [])
@@ -160,13 +172,107 @@ def format_text_tree(tree_data: Dict[str, Any], emoji: bool = False) -> str:
                     emoji_str = NORMAL_DIR_EMOJI
                 lines.append(prefix + connector + emoji_str + " " + child["name"])
 
+            # Collect file contents if present
+            if include_contents and child["type"] == "file" and "contents" in child:
+                file_contents_list.append({
+                    "path": child.get("path", child["name"]),
+                    "contents": child["contents"]
+                })
+
             # Recursively process children
             if child.get("children"):
                 next_prefix = prefix + (SPACE if is_last else VERT)
                 rec(child, next_prefix)
 
     rec(tree_data, "")
-    return "\n".join(lines)
+    tree_output = "\n".join(lines)
+
+    # Append file contents if requested
+    if include_contents and file_contents_list:
+        tree_output += "\n\n" + "=" * 80 + "\n"
+        tree_output += "FILE CONTENTS\n"
+        tree_output += "=" * 80 + "\n\n"
+
+        for item in file_contents_list:
+            tree_output += f"File: {item['path']}\n"
+            tree_output += "-" * 80 + "\n"
+            tree_output += item['contents']
+            tree_output += "\n" + "-" * 80 + "\n\n"
+
+    return tree_output
+
+
+def format_markdown_tree(tree_data: Dict[str, Any], emoji: bool = False, include_contents: bool = False) -> str:
+    """
+    Convert tree data to markdown format with code blocks.
+
+    Args:
+        tree_data: Hierarchical tree structure
+        emoji: If True, don't show emoji icons (matches draw_tree behavior)
+        include_contents: If True, include file contents in code blocks
+
+    Returns:
+        String with markdown-formatted tree and optionally file contents in code blocks
+    """
+    lines = [tree_data["name"]]
+    file_contents_list = []  # Store file paths and contents
+
+    def rec(node: Dict[str, Any], prefix: str) -> None:
+        children = node.get("children", [])
+        for i, child in enumerate(children):
+            is_last = i == len(children) - 1
+            connector = LAST if is_last else BRANCH
+
+            # Handle truncation marker
+            if child["type"] == "truncated":
+                lines.append(prefix + connector + child["name"])
+                continue
+
+            # Add emoji or not
+            if emoji:
+                suffix = "/" if child["type"] == "directory" else ""
+                lines.append(prefix + connector + child["name"] + suffix)
+            else:
+                if child["type"] == "file":
+                    emoji_str = FILE_EMOJI
+                else:
+                    emoji_str = NORMAL_DIR_EMOJI
+                lines.append(prefix + connector + emoji_str + " " + child["name"])
+
+            # Collect file contents if present
+            if include_contents and child["type"] == "file" and "contents" in child:
+                file_contents_list.append({
+                    "path": child.get("path", child["name"]),
+                    "name": child["name"],
+                    "contents": child["contents"]
+                })
+
+            # Recursively process children
+            if child.get("children"):
+                next_prefix = prefix + (SPACE if is_last else VERT)
+                rec(child, next_prefix)
+
+    rec(tree_data, "")
+
+    # Build markdown output
+    md_output = "```\n"
+    md_output += "\n".join(lines)
+    md_output += "\n```\n"
+
+    # Append file contents in code blocks if requested
+    if include_contents and file_contents_list:
+        md_output += "\n## File Contents\n\n"
+
+        for item in file_contents_list:
+            # Get language hint for syntax highlighting
+            lang_hint = get_language_hint(Path(item['name']))
+
+            md_output += f"### {item['path']}\n\n"
+            md_output += f"```{lang_hint}\n"
+            md_output += item['contents']
+            md_output += "\n```\n\n"
+
+    return md_output
 
 
 def write_outputs(
@@ -174,7 +280,8 @@ def write_outputs(
     json_path: Optional[str],
     txt_path: Optional[str],
     md_path: Optional[str],
-    emoji: bool = False
+    emoji: bool = False,
+    include_contents: bool = True
 ) -> None:
     """
     Write tree data to multiple output files simultaneously.
@@ -185,6 +292,7 @@ def write_outputs(
         txt_path: Path to TXT output file (if None, skip)
         md_path: Path to Markdown output file (if None, skip)
         emoji: Emoji flag for text formatting
+        include_contents: If True, include file contents in outputs (default: True)
     """
     try:
         if json_path:
@@ -193,14 +301,12 @@ def write_outputs(
                 f.write(content)
 
         if txt_path:
-            content = format_text_tree(tree_data, emoji=emoji)
+            content = format_text_tree(tree_data, emoji=emoji, include_contents=include_contents)
             with open(txt_path, 'w', encoding='utf-8') as f:
                 f.write(content)
 
         if md_path:
-            content = format_text_tree(tree_data, emoji=emoji)
-            # Wrap in markdown code block
-            content = f"```\n{content}\n```\n"
+            content = format_markdown_tree(tree_data, emoji=emoji, include_contents=include_contents)
             with open(md_path, 'w', encoding='utf-8') as f:
                 f.write(content)
 

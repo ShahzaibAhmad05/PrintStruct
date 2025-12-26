@@ -212,6 +212,27 @@ In addition to the directory path, the following options are available:
 | `--zip [name]`, `-z` | Zips the project while respecting `.gitignore`. Example: `--zip a` creates `a.zip`. If no name is provided, a random ID is used. |
 | `--out [file]`, `-o` | Save tree structure to file. Example: `--out tree.txt` or `--out tree.md` for markdown format. |
 | `--copy`, `-c`      | Copy tree output to clipboard. |
+| `--json [file]`     | Export tree as JSON to specified file. **By default, includes file contents** (up to 1MB per file). |
+| `--txt [file]`      | Export tree as text to specified file. **By default, includes file contents** (up to 1MB per file). |
+| `--md [file]`       | Export tree as Markdown to specified file. **By default, includes file contents** with syntax highlighting (up to 1MB per file). |
+| `--no-contents`     | Don't include file contents when exporting to JSON, TXT, or MD formats. Only the tree structure will be included. |
+
+
+## 📝 File Contents in Exports
+
+When using `--json`, `--txt`, or `--md` flags, **file contents are included by default**. This feature:
+
+- ✅ Includes text file contents (up to 1MB per file)
+- ✅ Detects and marks binary files as `[binary file]`
+- ✅ Handles large files by marking them as `[file too large: X.XXmb]`
+- ✅ Uses syntax highlighting in Markdown format based on file extension
+- ✅ Works with all filtering options (`--exclude`, `--include`, `.gitignore`, etc.)
+
+To export only the tree structure without file contents, use the `--no-contents` flag:
+
+```bash
+gitree --json output.json --no-contents
+```
 
 
 ## Installation (for Contributors)
