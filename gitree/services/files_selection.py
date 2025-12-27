@@ -8,11 +8,14 @@ import pathspec, questionary
 
 from ..utilities.gitignore import GitIgnoreMatcher
 from ..services.list_enteries import list_entries
+from ..utilities.logger import Logger, OutputBuffer
 
 
 def collect_candidate_files(
     *,
     root: Path,
+    output_buffer: OutputBuffer,
+    logger: Logger,
     respect_gitignore: bool,
     gitignore_depth: Optional[int],
     show_all: bool,
@@ -84,6 +87,8 @@ def collect_candidate_files(
 def resolve_selected_files(
     *,
     root: Path,
+    output_buffer: OutputBuffer,   
+    logger: Logger,
     respect_gitignore: bool,
     gitignore_depth: Optional[int],
     show_all: bool,

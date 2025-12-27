@@ -3,6 +3,7 @@ import pathspec
 import random, os, pyperclip, sys
 from pathlib import Path
 from typing import List, Optional
+from ..utilities.logger import Logger
 
 
 def max_items_int(v: str) -> int:
@@ -123,7 +124,7 @@ def matches_file_type(p: Path, file_types: List[str]) -> bool:
     return False
 
 
-def copy_to_clipboard(text: str) -> bool:
+def copy_to_clipboard(text: str, logger: Logger) -> bool:
     """
     Attempts to copy text to clipboard using pyperclip.
 
@@ -137,7 +138,7 @@ def copy_to_clipboard(text: str) -> bool:
         pyperclip.copy(text)
         return True
     except Exception as e:
-        print("pyperclip failed to copy to clipboard: ", e, file=sys.stderr)
+        logger.log(Logger.ERROR, "pyperclip failed to copy to clipboard: ", e, file=sys.stderr)
 
     return False
 

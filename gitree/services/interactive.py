@@ -3,11 +3,15 @@ from pathlib import Path
 from typing import List, Set
 from ..utilities.gitignore import GitIgnoreMatcher
 from ..utilities.utils import matches_file_type
+from ..utilities.logger import Logger, OutputBuffer
 from ..services.list_enteries import list_entries
 import pathspec
 
 def select_files(
+    *,
     root: Path,
+    output_buffer: OutputBuffer,   
+    logger: Logger,
     respect_gitignore: bool = True,
     gitignore_depth: int = None,
     extra_excludes: List[str] = None,
@@ -19,6 +23,8 @@ def select_files(
 
     Args:
         root (Path): Root directory path to scan
+        output_buffer (OutputBuffer): Buffer to write output to
+        logger (Logger): Logger instance for logging
         respect_gitignore (bool): If True, respect .gitignore rules. Defaults to True
         gitignore_depth (int): Maximum depth to search for .gitignore files
         extra_excludes (List[str]): Additional exclude patterns
@@ -113,7 +119,7 @@ def select_files(
     collect_files(root, [])
 
     if not files_to_select:
-        print("No files found to select (check your include/exclude patterns).")
+        logger.log(Logger.WARNING, "No files found to select (check your include/exclude patterns).")
         return set()
 
     selected_rels = questionary.checkbox(

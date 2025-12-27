@@ -6,6 +6,7 @@ import platform
 from pathlib import Path
 from typing import Dict, Any, Optional
 import argparse
+from ..utilities.logger import Logger  
 
 
 def get_config_path() -> Path:
@@ -53,7 +54,7 @@ def get_default_config() -> Dict[str, Any]:
     }
 
 
-def validate_config(config: Dict[str, Any]) -> None:
+def validate_config(logger: Logger, config: Dict[str, Any]) -> None:
     """
     Validates the configuration values.
     Exits with error if validation fails.
@@ -72,34 +73,43 @@ def validate_config(config: Dict[str, Any]) -> None:
             if key in optional_int_keys or key in ["depth", "gitignore_depth", "exclude_depth"]:
                 continue
             else:
-                print(f"Error: '{key}' cannot be null in config.json", file=sys.stderr)
+                logger.log(Logger.ERROR, 
+                    f"key '{key}' cannot be null in config.json")
                 sys.exit(1)
 
         # Type checking based on key
         if key == "max_items":
             if not isinstance(value, int):
-                print(f"Error: 'max_items' must be int, got {type(value).__name__} in config.json", file=sys.stderr)
+                logger.log(Logger.ERROR, 
+                    f"key 'max_items' must be int, got {type(value).__name__} in config.json")
                 sys.exit(1)
             if value < 1 or value > 10000:
-                print(f"Error: 'max_items' must be between 1 and 10000, got {value} in config.json", file=sys.stderr)
+                logger.log(Logger.ERROR, 
+                    "key 'max_items' must be between 1 and 10000, got {value} in config.json")
                 sys.exit(1)
+
         elif key in optional_int_keys:
             if not isinstance(value, int):
-                print(f"Error: '{key}' must be int or null, got {type(value).__name__} in config.json", file=sys.stderr)
+                logger.log(Logger.ERROR, 
+                    f"key '{key}' must be int or null, got {type(value).__name__} in config.json")
                 sys.exit(1)
             if value < 0:
-                print(f"Error: '{key}' cannot be negative, got {value} in config.json", file=sys.stderr)
+                logger.log(Logger.ERROR, 
+                    f"Error: '{key}' cannot be negative, got {value} in config.json")
                 sys.exit(1)
+
         elif key in ["emoji", "show_all", "no_gitignore", "no_files", "no_limit", "summary"]:
             if not isinstance(value, bool):
-                print(f"Error: '{key}' must be boolean (true/false), got {type(value).__name__} in config.json", file=sys.stderr)
+                logger.log(Logger.ERROR, 
+                    f"Error: '{key}' must be boolean (true/false), got {type(value).__name__} in config.json")
                 sys.exit(1)
         else:
-            print(f"Error: Unknown configuration key '{key}' in config.json", file=sys.stderr)
+            logger.log(Logger.ERROR, 
+                f"Error: Unknown configuration key '{key}' in config.json")
             sys.exit(1)
 
 
-def load_user_config() -> Optional[Dict[str, Any]]:
+def load_user_config(logger: Logger) -> Optional[Dict[str, Any]]:
     """
     Loads configuration from config.json if it exists.
     Returns None if file doesn't exist.
@@ -113,12 +123,15 @@ def load_user_config() -> Optional[Dict[str, Any]]:
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
             config = json.load(f)
+
     except json.JSONDecodeError as e:
-        print(f"Error: Invalid JSON in config.json at line {e.lineno}, column {e.colno}", file=sys.stderr)
-        print(f"  {e.msg}", file=sys.stderr)
+        logger.log(Logger.ERROR, 
+            f"invalid JSON in config.json at line {e.lineno}, column {e.colno}")
+        logger.log(Logger.ERROR, f"  {e.msg}")
         sys.exit(1)
+
     except Exception as e:
-        print(f"Error: Could not read config.json: {e}", file=sys.stderr)
+        logger.log(Logger.ERROR, f"Error: Could not read config.json: {e}")
         sys.exit(1)
 
     # Validate the config
@@ -127,14 +140,14 @@ def load_user_config() -> Optional[Dict[str, Any]]:
     return config
 
 
-def create_default_config() -> None:
+def create_default_config(logger: Logger) -> None:
     """
     Creates a default config.json file with all defaults and comments.
     """
     config_path = get_config_path()
 
     if config_path.exists():
-        print(f"config.json already exists at {config_path.absolute()}")
+        logger.log(Logger.WARNING, f"config.json already exists at {config_path.absolute()}")
         return
 
     # Create config with comments (as a formatted string)
@@ -146,14 +159,14 @@ def create_default_config() -> None:
             json.dump(config, f, indent=2, ensure_ascii=False)
             f.write('\n')
 
-        print(f"Created config.json at {config_path.absolute()}")
-        print("Edit this file to customize default settings for this project.")
+        logger.log(Logger.DEBUG, f"Created config.json at {config_path.absolute()}")
+        logger.log(Logger.DEBUG, "Edit this file to customize default settings for this project.")
     except Exception as e:
-        print(f"Error: Could not create config.json: {e}", file=sys.stderr)
+        logger.log(Logger.ERROR, f"Could not create config.json: {e}", file=sys.stderr)
         sys.exit(1)
 
 
-def open_config_in_editor() -> None:
+def open_config_in_editor(logger: Logger) -> None:
     """
     Opens config.json in the default text editor.
     """
@@ -161,8 +174,8 @@ def open_config_in_editor() -> None:
 
     # Create config if it doesn't exist
     if not config_path.exists():
-        print(f"config.json not found. Creating default config...")
-        create_default_config()
+        logger.log(Logger.INFO, f"config.json not found. Creating default config...")
+        create_default_config(logger=logger)
 
     # Try to get editor from environment variable first
     editor = os.environ.get('EDITOR') or os.environ.get('VISUAL')
@@ -195,9 +208,10 @@ def open_config_in_editor() -> None:
                 raise Exception(f"Unsupported platform: {system}")
 
     except Exception as e:
-        print(f"Error: Could not open editor: {e}", file=sys.stderr)
-        print(f"Please manually open: {config_path.absolute()}", file=sys.stderr)
-        print(f"Or set your EDITOR environment variable to your preferred editor.", file=sys.stderr)
+        logger.log(Logger.ERROR, f"Could not open editor: {e}")
+        logger.log(Logger.ERROR, f"Please manually open: {config_path.absolute()}")
+        logger.log(Logger.ERROR, 
+            f"Or set your EDITOR environment variable to your preferred editor.")
         sys.exit(1)
 
 
@@ -225,23 +239,24 @@ def merge_config_with_args(config: dict, args: argparse.Namespace) -> argparse.N
     return args
 
 
-def resolve_config(args: argparse.Namespace) -> Dict[str, Any]:
+def resolve_config(args: argparse.Namespace, logger: Logger) -> argparse.Namespace:
     """
     Resolves the final configuration by merging user config with CLI args.
 
     Args:
         args: Parsed command-line arguments
+        logger: Logger instance for logging errors
 
     Returns:
         dict: Final configuration dictionary
     """
     # Load user configuration unless --no-config is specified
     if not args.no_config:
-        config = load_user_config()
+        config = load_user_config(logger=logger)
         if not config:      # If the user has not setup a configuration file
             config = get_default_config()
             
         # Merge config with args, precedence to CLI args
         args = merge_config_with_args(config, args)
 
-    return config
+    return args

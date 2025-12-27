@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import List, Optional, Set
 from ..utilities.gitignore import GitIgnoreMatcher
 from ..services.list_enteries import list_entries
+from ..utilities.logger import Logger, OutputBuffer
 from ..constants.constant import (BRANCH, LAST, SPACE, VERT, 
                                   FILE_EMOJI, EMPTY_DIR_EMOJI, 
                                   NORMAL_DIR_EMOJI)
@@ -10,14 +11,17 @@ from collections import defaultdict
 
 
 def draw_tree(
-    root: Path,
     *,
+    root: Path,
+    output_buffer: OutputBuffer,
+    logger: Logger,
     depth: Optional[int],
     show_all: bool,
     extra_excludes: List[str],
     respect_gitignore: bool,
     gitignore_depth: Optional[int],
     max_items: Optional[int] = None,
+    no_limit: bool = False,
     exclude_depth: Optional[int] = None,
     no_files: bool = False,
     emoji: bool = False,
@@ -30,6 +34,8 @@ def draw_tree(
 
     Args:
         root (Path): Root directory path to start the tree from
+        output_buffer (OutputBuffer): Buffer to write output to
+        logger (Logger): Logger instance for logging
         depth (Optional[int]): Maximum depth to traverse. None for unlimited
         show_all (bool): If True, include hidden files and directories
         extra_excludes (List[str]): Additional exclude patterns
@@ -48,7 +54,7 @@ def draw_tree(
     """
     gi = GitIgnoreMatcher(root, enabled=respect_gitignore, gitignore_depth=gitignore_depth)
 
-    print(root.name)
+    output_buffer.write(root.name)
 
     def rec(dirpath: Path, prefix: str, current_depth: int, patterns: List[str]) -> None:
         if depth is not None and current_depth >= depth:
@@ -73,11 +79,14 @@ def draw_tree(
         entries, truncated = list_entries(
             dirpath,
             root=root,
+            output_buffer=output_buffer,
+            logger=logger,
             gi=gi,
             spec=spec,
             show_all=show_all,
             extra_excludes=extra_excludes,
             max_items=max_items,
+            no_limit=no_limit,
             exclude_depth=exclude_depth,
             no_files=no_files,
             include_patterns=include_patterns,
@@ -108,7 +117,7 @@ def draw_tree(
             connector = LAST if is_last else BRANCH
             suffix = "/" if entry.is_dir() else ""
             if emoji:
-                print(prefix + connector + entry.name + suffix)
+                output_buffer.write(prefix + connector + entry.name + suffix)
             else:
                 if entry.is_file():
                     emoji_str = FILE_EMOJI
@@ -117,7 +126,7 @@ def draw_tree(
                         emoji_str = EMPTY_DIR_EMOJI if (entry.is_dir() and not any(entry.iterdir())) else NORMAL_DIR_EMOJI
                     except PermissionError:
                         emoji_str = NORMAL_DIR_EMOJI
-                print(prefix + connector + emoji_str + " " + entry.name + suffix)
+                output_buffer.write(prefix + connector + emoji_str + " " + entry.name + suffix)
 
             if entry.is_dir():
                 rec(entry, prefix + (SPACE if is_last else VERT),  current_depth + 1, patterns)
@@ -125,15 +134,17 @@ def draw_tree(
         # Show truncation message if items were hidden
         if truncated > 0:
             # truncation line is always last among displayed items
-            print(prefix + LAST + f"... and {truncated} more items")
+            output_buffer.write(prefix + LAST + f"... and {truncated} more items")
 
     if root.is_dir():
         rec(root, "", 0, [])
 
 
 def print_summary(
-    root: Path,
     *,
+    root: Path,
+    output_buffer: OutputBuffer,
+    logger: Logger,
     respect_gitignore: bool = True,
     gitignore_depth: Optional[int] = None,
     extra_excludes: Optional[List[str]] = None,
@@ -145,6 +156,8 @@ def print_summary(
 
     Args:
         root (Path): Root directory path to analyze
+        output_buffer (OutputBuffer): Buffer to write output to
+        logger (Logger): Logger instance for logging
         respect_gitignore (bool): If True, respect .gitignore rules. Defaults to True
         gitignore_depth (Optional[int]): Maximum depth to search for .gitignore files
         extra_excludes (Optional[List[str]]): Additional exclude patterns
@@ -198,6 +211,6 @@ def print_summary(
 
     count(root, 0, [])
 
-    print("\nDirectory Summary:")
+    output_buffer.write("\nDirectory Summary:")
     for level in sorted(summary):
-        print(f"Level {level}: {summary[level]['dirs']} dirs, {summary[level]['files']} files")
+        output_buffer.write(f"Level {level}: {summary[level]['dirs']} dirs, {summary[level]['files']} files")

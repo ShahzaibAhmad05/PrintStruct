@@ -1,4 +1,5 @@
 from ..utilities.config import create_default_config, open_config_in_editor
+from ..utilities.logger import Logger, OutputBuffer
 import argparse, glob, sys
 from pathlib import Path
 from typing import List
@@ -11,12 +12,13 @@ def get_project_version() -> str:
     return "0.0.0 (dev)"
 
 
-def resolve_root_paths(args: argparse.Namespace) -> List[str]:
+def resolve_root_paths(args: argparse.Namespace, logger: Logger) -> List[str]:
     """
     Resolve and validate root paths from CLI arguments.
 
     Args:
         args: Parsed argparse.Namespace object with a `paths` attribute
+        logger: Logger instance for logging errors
 
     Returns:
         A list of resolved Path objects
@@ -29,16 +31,16 @@ def resolve_root_paths(args: argparse.Namespace) -> List[str]:
             # Expand glob pattern
             matches = glob.glob(path_str)
             if not matches:
-                print(f"Error: no matches found for pattern: {path_str}", file=sys.stderr)
-                raise SystemExit(1)
+                logger.log(Logger.ERROR, f"no matches found for pattern: {path_str}")
+                # raise SystemExit(1) NOTE: quietly exit for now
             for match in matches:
                 roots.append(Path(match).resolve())
         else:
             # Regular path without wildcards
             path = Path(path_str).resolve()
             if not path.exists():
-                print(f"Error: path not found: {path}", file=sys.stderr)
-                raise SystemExit(1)
+                logger.log(Logger.ERROR, f"path not found: {path}", file=sys.stderr)
+                # raise SystemExit(1) NOTE: quietly exit for now
             roots.append(path)
 
     return roots

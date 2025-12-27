@@ -1,5 +1,5 @@
 import sys
-from typing import List, Literal
+from typing import List, Literal, Dict
 
 
 class Logger:
@@ -15,26 +15,32 @@ class Logger:
     INFO = 20
     WARNING = 30
     ERROR = 40
-        
-    # Dict for translating levels into names
-    VALID_LEVEL = Literal["DEBUG", "INFO", "WARNING", "ERROR"]
 
 
     def __init__(self):
         """
         Initialize the logger with an empty message and outputs list.
         """
+        self._LEVEL_NAMES: Dict[int, str] = {
+            10: "DEBUG",
+            20: "INFO",
+            30: "WARNING",
+            40: "ERROR",
+        }
         self._messages: List[str] = []
 
 
-    def log(self, level: VALID_LEVEL ,message: str) -> None:
+    def log(self, level: str | None, message: str) -> None:
         """
         Store a debug message.
 
         Args:
             message: The debug message to store
         """
-        self._messages.append(self._append_level(level, message))
+        if level is None:
+            self._messages.append(message)
+        else:  
+            self._messages.append(self._append_level(level, message))
 
 
     def flush(self) -> None:
@@ -77,7 +83,7 @@ class Logger:
         return self._messages.copy()
     
 
-    def _append_level(self, level: VALID_LEVEL, message: str) -> str:
+    def _append_level(self, level: str, message: str) -> str:
         """
         Append the log level to the message.
 
@@ -88,7 +94,7 @@ class Logger:
         Returns:
             The message prefixed with the log level
         """
-        return f"[{level}] {message}"
+        return f"[{self._LEVEL_NAMES[level]}] {message}"
 
 
 class OutputBuffer:
@@ -113,12 +119,28 @@ class OutputBuffer:
         Args:
             message: The message to write
         """
-        self.logger.store(message)
+        self.logger.log(level=None, message=message)
 
 
     def flush(self) -> None:
         """
         Flush the output buffer.
         """
-        for message in self.logger.get_logs():
-            print(message)  # Print each message on a newline
+        self.logger.flush()
+
+
+    def get_value(self) -> List[str]:
+        """
+        Get the entire contents of the output buffer as a list of strings.
+
+        Returns:
+            str: The contents of the output buffer
+        """
+        return "\n".join(self.logger.get_logs())
+    
+    def clear(self) -> None:   
+        """
+        Clear the output buffer.
+        """
+        self.logger.clear()
+    

@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import List, Optional, Set
 from ..utilities.gitignore import GitIgnoreMatcher
+from ..utilities.logger import Logger, OutputBuffer
 from ..services.list_enteries import list_entries
 import zipfile
 import pathspec
@@ -8,8 +9,10 @@ import pathspec
 
 def zip_project_to_handle(
     z: zipfile.ZipFile,
-    root: Path,
     *,
+    root: Path,
+    output_buffer: OutputBuffer,
+    logger: Logger,
     show_all: bool,
     extra_excludes: List[str],
     respect_gitignore: bool,
@@ -54,6 +57,8 @@ def zip_project_to_handle(
         entries, _ = list_entries(
             dirpath,
             root=root,
+            output_buffer=output_buffer,
+            logger=logger,
             gi=gi,
             spec=spec,
             show_all=show_all,

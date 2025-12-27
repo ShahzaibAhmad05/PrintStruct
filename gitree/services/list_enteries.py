@@ -2,6 +2,7 @@ from typing import List, Optional, Tuple
 from pathlib import Path
 from ..utilities.gitignore import GitIgnoreMatcher
 from ..utilities.utils import iter_dir, matches_extra, matches_file_type
+from ..utilities.logger import Logger, OutputBuffer
 import pathspec
 
 
@@ -9,11 +10,14 @@ def list_entries(
     directory: Path,
     *,
     root: Path,
+    output_buffer: OutputBuffer,
+    logger: Logger,
     gi: GitIgnoreMatcher,
     spec: pathspec.PathSpec,
     show_all: bool,
     extra_excludes: List[str],
     max_items: Optional[int] = None,
+    no_limit: bool = False,
     exclude_depth: Optional[int] = None,
     no_files: bool = False,
     include_patterns: List[str] = None,
@@ -25,6 +29,8 @@ def list_entries(
     Args:
         directory (Path): Directory to list entries from
         root (Path): Root directory for relative path calculations
+        output_buffer (OutputBuffer): Buffer to write output to
+        logger (Logger): Logger instance for logging
         gi (GitIgnoreMatcher): GitIgnore matcher instance
         spec (pathspec.PathSpec): Pathspec for gitignore patterns
         show_all (bool): If True, include hidden files
@@ -88,7 +94,7 @@ def list_entries(
 
     # Handle max_items limit
     truncated = 0
-    if max_items is not None and len(out) > max_items:
+    if not no_limit and max_items is not None and len(out) > max_items:
         truncated = len(out) - max_items
         out = out[:max_items]
 

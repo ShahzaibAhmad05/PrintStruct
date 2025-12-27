@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 from ..utilities.gitignore import GitIgnoreMatcher
 from ..utilities.utils import read_file_contents, get_language_hint
+from ..utilities.logger import Logger, OutputBuffer
 from ..services.list_enteries import list_entries
 from ..constants.constant import (BRANCH, LAST, SPACE, VERT,
                                   FILE_EMOJI, EMPTY_DIR_EMOJI,
@@ -11,8 +12,10 @@ import pathspec
 
 
 def build_tree_data(
-    root: Path,
     *,
+    root: Path,
+    output_buffer: OutputBuffer,
+    logger: Logger,
     depth: Optional[int],
     show_all: bool,
     extra_excludes: List[str],
@@ -69,6 +72,8 @@ def build_tree_data(
         entries, truncated = list_entries(
             dirpath,
             root=root,
+            output_buffer=output_buffer,
+            logger=logger,
             gi=gi,
             spec=spec,
             show_all=show_all,
@@ -282,6 +287,7 @@ def format_markdown_tree(tree_data: Dict[str, Any], emoji: bool = False, include
 
 
 def write_outputs(
+    logger: Logger,
     tree_data: Dict[str, Any],
     json_path: Optional[str],
     txt_path: Optional[str],
@@ -317,8 +323,8 @@ def write_outputs(
                 f.write(content)
 
     except IOError as e:
-        print(f"Error writing output file: {e}")
+        logger.log(Logger.ERROR, f"Error writing output file: {e}")
         raise
     except Exception as e:
-        print(f"Unexpected error during file output: {e}")
+        logger.log(Logger.ERROR, f"Unexpected error during file output: {e}")
         raise

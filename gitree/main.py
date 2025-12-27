@@ -27,7 +27,7 @@ def main() -> None:
 
 
     # Resolve configuration (handle user, global, and default config merging)
-    resolve_config(args)
+    args = resolve_config(args, logger=logger)
 
 
     # Fix any incorrect CLI args (paths missing extensions, etc.)
@@ -40,13 +40,8 @@ def main() -> None:
 
 
     # Validate and resolve all paths
-    roots = resolve_root_paths(args)
+    roots = resolve_root_paths(args, logger=logger)
 
-
-    if args.copy or args.output is not None:
-        # Capture stdout
-        output_buffer = io.StringIO()
-        sys.stdout = output_buffer
 
     # if zipping is requested
     if args.zip is not None:
@@ -79,6 +74,8 @@ def main() -> None:
                 zip_project_to_handle(
                     z=z,
                     root=root,
+                    output_buffer=output_buffer,
+                    logger=logger,
                     show_all=args.hidden_items,
                     extra_excludes=args.exclude,
                     respect_gitignore=not args.no_gitignore,
@@ -112,17 +109,20 @@ def main() -> None:
             # Add header for multiple paths
             if len(roots) > 1:
                 if i > 0:
-                    print()  # Empty line between trees
+                    output_buffer.write("")  # Empty line between trees
                 output_buffer.write(root)
 
             draw_tree(
                 root=root,
+                output_buffer=output_buffer,
+                logger=logger,
                 depth=args.max_depth,
                 show_all=args.hidden_items,
                 extra_excludes=args.exclude,
                 respect_gitignore=not args.no_gitignore,
                 gitignore_depth=args.gitignore_depth,
                 max_items=args.max_items,
+                no_limit=args.no_limit,
                 exclude_depth=args.exclude_depth,
                 no_files=args.no_files,
                 emoji=args.emoji,
@@ -133,7 +133,9 @@ def main() -> None:
 
             if args.summary:        # call summary if requested
                 print_summary(
-                    root,
+                    root=root,
+                    output_buffer=output_buffer,
+                    logger=logger,
                     respect_gitignore=not args.no_gitignore,
                     gitignore_depth=args.gitignore_depth,
                     extra_excludes=args.exclude,
@@ -143,7 +145,7 @@ def main() -> None:
 
         if args.output is not None:     # that file output code again
             # Write to file
-            content = output_buffer.getvalue()
+            content = output_buffer.get_value()
 
             # Wrap in markdown code block if .md extension
             if args.output.endswith('.md'):
@@ -153,11 +155,11 @@ def main() -> None:
                 f.write(content)
 
         if args.copy:       # Capture output if needed for clipboard
-            content = output_buffer.getvalue() + "\n"
-            if not copy_to_clipboard(content):
+            if not copy_to_clipboard(output_buffer.get_value(), logger=logger):
                 output_buffer.write("Warning: Could not copy to clipboard. Please install a clipboard utility (xclip, wl-copy) or ensure your environment supports it.")
             else:
-                logger.write(Logger.INFO, "Tree output copied to clipboard successfully.\n")
+                output_buffer.clear()
+                logger.log(Logger.INFO, "Tree output copied to clipboard successfully.")
 
 
         # Handle file outputs
@@ -169,6 +171,8 @@ def main() -> None:
 
             tree_data = build_tree_data(
                 root=root,
+                output_buffer=output_buffer,
+                logger=logger,
                 depth=args.max_depth,
                 show_all=args.hidden_items,
                 extra_excludes=args.exclude,
@@ -184,6 +188,7 @@ def main() -> None:
             )
 
             write_outputs(
+                logger=logger,
                 tree_data=tree_data,
                 json_path=args.json,
                 txt_path=args.txt,
@@ -192,9 +197,13 @@ def main() -> None:
                 include_contents=include_contents
             )
 
-    output_buffer.flush()
+    # print the output only if not copied to clipboard or zipped or output to file
+    if not args.copy and not args.output and not args.zip:
+        output_buffer.flush()
+
+    # print the log if verbose mode
     if args.verbose:
-        print("\nLOG:")
+        print("LOG:")
         logger.flush()
 
 
