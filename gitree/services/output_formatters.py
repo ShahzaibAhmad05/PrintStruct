@@ -25,6 +25,7 @@ def build_tree_data(
     include_patterns: List[str] = None,
     include_file_types: List[str] = None,
     include_contents: bool = True,
+    no_contents_for: Optional[List[Path]] = None 
 ) -> Dict[str, Any]:
     """
     Build hierarchical tree structure as dictionary.
@@ -36,6 +37,13 @@ def build_tree_data(
         Dict with structure: {"name": str, "type": "file"|"directory", "children": [...], "contents": str (optional)}
     """
     gi = GitIgnoreMatcher(root, enabled=respect_gitignore, gitignore_depth=gitignore_depth)
+
+    if no_contents_for is None:
+        no_contents_for = []
+    else:
+        # Ensure all paths are resolved
+        no_contents_for = [p.resolve() if isinstance(p, Path) else Path(p).resolve() for p in no_contents_for]
+
 
     tree_root = {
         "name": root.name,
@@ -104,8 +112,9 @@ def build_tree_data(
                     "type": "file",
                     "path": str(entry.relative_to(root).as_posix())
                 }
-                # Add file contents if requested
-                if include_contents:
+
+                # Add file contents if requested, but skip if in no_contents_for
+                if include_contents and entry.resolve() not in no_contents_for:
                     file_node["contents"] = read_file_contents(entry)
                 children.append(file_node)
             elif entry.is_dir():
