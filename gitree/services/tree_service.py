@@ -8,7 +8,7 @@ from ..constants.constant import (BRANCH, LAST, SPACE, VERT,
                                   FILE_EMOJI, EMPTY_DIR_EMOJI, 
                                   NORMAL_DIR_EMOJI)
 import pathspec
-from collections import defaultdict  
+from collections import defaultdict
 
 
 def draw_tree(
@@ -29,6 +29,7 @@ def draw_tree(
     whitelist: Optional[Set[str]] = None,
     include_patterns: List[str] = None,
     include_file_types: List[str] = None,
+    files_first: bool = False,
 ) -> None:
     """
     Recursively print a directory tree structure with visual formatting.
@@ -92,6 +93,7 @@ def draw_tree(
             no_files=no_files,
             include_patterns=include_patterns,
             include_file_types=include_file_types,
+            files_first=files_first,
         )
 
         filtered_entries = []
@@ -108,7 +110,7 @@ def draw_tree(
                    if not any(f.startswith(entry_path) for f in whitelist):
                        continue
             filtered_entries.append(entry)
-        
+
         entries = filtered_entries
 
 
@@ -240,6 +242,7 @@ def run_tree_mode(
                 include_patterns=args.include,
                 exclude_patterns=args.exclude,
                 include_file_types=args.include_file_types,
+                files_first=args.files_first,
             )
             if not selected_files:
                 continue
@@ -267,6 +270,7 @@ def run_tree_mode(
             whitelist=selected_files,
             include_patterns=args.include,
             include_file_types=args.include_file_types,
+            files_first=args.files_first,
         )
 
         if args.summary:

@@ -178,5 +178,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Ignore config.json and use hardcoded defaults",
     )
+    ap.add_argument(
+        "--files-first",
+        action="store_true",
+        default=False,
+        help="Print files before directories in the tree output",
+    )
 
     return ap.parse_args()

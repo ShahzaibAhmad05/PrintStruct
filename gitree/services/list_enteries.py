@@ -22,6 +22,7 @@ def list_entries(
     no_files: bool = False,
     include_patterns: List[str] = None,
     include_file_types: List[str] = None,
+    files_first: bool = False,
 ) -> Tuple[List[Path], int]:
     """
     List and filter directory entries based on various criteria.
@@ -90,7 +91,14 @@ def list_entries(
             # No inclusion filters, include everything
             out.append(e)
 
-    out.sort(key=lambda x: (x.is_file(), x.name.lower()))
+    if files_first:
+        # Sort files first (is_file() is True/1, is_dir() is False/0)
+        # We use -x.is_file() because True (1) comes after False (0)
+        # in ascending sorts, so we negate it to put files at the top.
+        out.sort(key=lambda x: (-x.is_file(), x.name.lower()))
+    else:
+        # Default: Directories first
+        out.sort(key=lambda x: (x.is_file(), x.name.lower()))
 
     # Handle max_items limit
     truncated = 0
