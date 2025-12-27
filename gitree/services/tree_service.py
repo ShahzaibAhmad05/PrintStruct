@@ -326,6 +326,7 @@ def run_tree_mode(
             include_patterns=args.include,
             include_file_types=args.include_file_types,
             include_contents=include_contents,
+            no_contents_for=no_contents_for
         )
 
         write_outputs(
