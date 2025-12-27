@@ -1,151 +1,73 @@
-# main.py
+# gitree/main.py
 from __future__ import annotations
-import sys, io
+import sys
 if sys.platform.startswith('win'):      # fix windows unicode error on CI
     sys.stdout.reconfigure(encoding='utf-8')
 
-from pathlib import Path
-from .services.draw_tree import draw_tree, print_summary
-from .services.zip_project import zip_project
-from .services.parser import parse_args
-from .utilities.utils import get_project_version, copy_to_clipboard
-from .utilities.config import load_config, create_default_config, open_config_in_editor, get_default_config
+from .services.tree_service import run_tree_mode
+from .services.parsing_service import parse_args, correct_args
+from .utilities.config import resolve_config
+from .utilities.logger import Logger, OutputBuffer
+from .services.basic_args_handling_service import handle_basic_cli_args, resolve_root_paths
+from .services.zipping_service import zip_roots
 
 
 def main() -> None:
+    """
+    Main entry point for the gitree CLI tool.
+
+    Handles argument parsing, configuration loading, and orchestrates the main
+    functionality including tree printing, zipping, and file exports.
+
+    For Contributors:
+        - If you are adding features, make sure to keep the main function clean
+        - Do not put implementation details here
+        - Use services/ and utilities/ modules for logic, and import their functions here
+    """
     args = parse_args()
+    logger = Logger()
+    output_buffer = OutputBuffer()
 
-    # Handle config + version commands that exit immediately
-    if args.init_config:
-        create_default_config()
-        return
 
-    if args.config_user:
-        open_config_in_editor()
-        return
+    # Resolve configuration (handle user, global, and default config merging)
+    args = resolve_config(args, logger=logger)
 
-    if args.version:
-        print(get_project_version())
-        return
 
-    # Load config file if it exists and --no-config is not set
-    if not args.no_config:
-        config = load_config()
-        if config:      # If the user has setup a configuration file
-            defaults = get_default_config()
+    # Fix any incorrect CLI args (paths missing extensions, etc.)
+    args = correct_args(args)
+    # This one bellow is also used for determining whether to draw tree or not
+    condition_for_no_output = args.copy or args.output or args.zip 
 
-            # Merge config values with args (CLI args take precedence)
-            # Only use config value if arg is still at its default value
-            if args.max_items == defaults["max_items"] and "max_items" in config:
-                args.max_items = config["max_items"]
-            if args.depth == defaults["depth"] and "depth" in config:
-                args.depth = config["depth"]
-            if args.gitignore_depth == defaults["gitignore_depth"] and "gitignore_depth" in config:
-                args.gitignore_depth = config["gitignore_depth"]
-            if args.ignore_depth == defaults["ignore_depth"] and "ignore_depth" in config:
-                args.ignore_depth = config["ignore_depth"]
-            if args.emoji == defaults["emoji"] and "emoji" in config:  
-                # Note: --emoji flag uses action="store_false" (inverted)
-                # Config uses intuitive naming: true = show emojis
-                # But args.emoji is inverted: False = show emojis
-                args.emoji = not config["emoji"]
-            if args.all == defaults["show_all"] and "show_all" in config:
-                args.all = config["show_all"]
-            if args.no_gitignore == defaults["no_gitignore"] and "no_gitignore" in config:
-                args.no_gitignore = config["no_gitignore"]
-            if args.no_files == defaults["no_files"] and "no_files" in config:
-                args.no_files = config["no_files"]
-            if args.no_limit == defaults["no_limit"] and "no_limit" in config:
-                args.no_limit = config["no_limit"]
-            if args.summary == defaults["summary"] and "summary" in config:
-                args.summary = config["summary"]
 
-    root = Path(args.path).resolve()
-    if not root.exists():
-        print(f"Error: path not found: {root}", file=sys.stderr)
-        raise SystemExit(1)
-        
-    # If --no-limit is set, disable max_items
-    max_items = None if args.no_limit else args.max_items
+    # if some specific Basic CLI args given, execute and return
+    # Handles for --version, --init-config, --config-user, --no-config
+    if handle_basic_cli_args(args): return
 
-    if args.out is not None:     # TODO: relocate this code for file output
-        # Determine filename
-        filename = args.out
-        # Add .txt extension only if no extension provided
-        if not Path(filename).suffix:
-            filename += '.txt'
 
-    if args.copy or args.out is not None:
-        # Capture stdout
-        output_buffer = io.StringIO()
-        original_stdout = sys.stdout
-        sys.stdout = output_buffer
+    # Validate and resolve all paths
+    roots = resolve_root_paths(args, logger=logger)
 
-    # If interactive mode is enabled
-    selected_files = None
-    if args.interactive:
-        from .services.interactive import select_files
-        selected_files = select_files(
-            root=root,
-            respect_gitignore=not args.no_gitignore,
-            gitignore_depth=args.gitignore_depth,
-            extra_ignores=args.ignore,
-            include_patterns=args.include,
-            exclude_patterns=args.exclude
-        )
-        if not selected_files:
-            print("No files selected. Exiting.")
-            return
 
     # if zipping is requested
     if args.zip is not None:
-        zip_project(
-            root=root,
-            zip_stem=args.zip,
-            show_all=args.all,
-            extra_ignores=args.ignore,
-            respect_gitignore=not args.no_gitignore,
-            gitignore_depth=args.gitignore_depth,
-            ignore_depth=args.ignore_depth,
-            depth=args.depth,
-            no_files=args.no_files,
-            whitelist=selected_files
-        )
-    else:       # else, print the tree normally
-        draw_tree(
-            root=root,
-            depth=args.depth,
-            show_all=args.all,
-            extra_ignores=args.ignore,
-            respect_gitignore=not args.no_gitignore,
-            gitignore_depth=args.gitignore_depth,
-            max_items=max_items,
-            ignore_depth=args.ignore_depth,
-            no_files=args.no_files,
-            emoji=args.emoji,
-            whitelist=selected_files
-        )
+        zip_roots(args, roots, output_buffer, logger)
 
-        if args.summary:        # call summary if requested
-            print_summary(root)
+    # else, print the tree normally
+    else:       
+        run_tree_mode(args, roots, output_buffer, logger)
 
-        if args.out is not None:     # that file output code again
-            # Write to file
-            content = output_buffer.getvalue()
 
-            # Wrap in markdown code block if .md extension
-            if filename.endswith('.md'):
-                content = f"```\n{content}```\n"
+    # print the output only if not copied to clipboard or zipped or output to file
+    if not condition_for_no_output:
+        output_buffer.flush()
 
-            with open(filename, 'w', encoding='utf-8') as f:
-                f.write(content)
 
-        if args.copy:       # Capture output if needed for clipboard
-            content = output_buffer.getvalue() + "\n"
-            if not copy_to_clipboard(content):
-                print("Warning: Could not copy to clipboard. Please install a clipboard utility (xclip, wl-copy) or ensure your environment supports it.", file=sys.stderr)
-            # TODO: place an else statement here with a 
-            # success message when verbose is added
+    # print the log if verbose mode
+    if args.verbose:
+        if not condition_for_no_output: print()
+        print("LOG:")
+        logger.flush()
+
 
 if __name__ == "__main__":
     main()

@@ -1,4 +1,4 @@
-name: auto_assign_pr_and_request_review
+name: auto_assign_pr_request_review_and_link_issues
 
 on:
   pull_request_target:
@@ -9,18 +9,21 @@ permissions:
   pull-requests: write
 
 jobs:
-  assign_and_request_review:
+  assign_review_and_link_issues:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v7
         with:
           script: |
             const { owner, repo } = context.repo;
-            const pr_number = context.payload.pull_request.number;
-            const pr_author = context.payload.pull_request.user.login;
+
+            const pr = context.payload.pull_request;
+            const pr_number = pr.number;
+            const pr_author = pr.user.login;
+
             const admin = "ShahzaibAhmad05";
 
-            // Assign ONLY admin
+            // 1) Assign ONLY admin (idempotent-safe)
             await github.rest.issues.addAssignees({
               owner,
               repo,
@@ -28,7 +31,7 @@ jobs:
               assignees: [admin],
             });
 
-            // Request admin review
+            // 2) Request admin review (skip if admin opened the PR)
             if (admin.toLowerCase() !== pr_author.toLowerCase()) {
               await github.rest.pulls.requestReviewers({
                 owner,
@@ -38,9 +41,42 @@ jobs:
               });
             }
 
-            await github.rest.issues.createComment({
-              owner,
-              repo,
-              issue_number: pr_number,
-              body: `Assigned this PR to @${admin}.\n\nRequested review from @${admin}.`,
-            });
+            // 3) Link issue number(s) by rewriting the template line (or prepending)
+            const body = pr.body || "";
+
+            // Extract issue refs like #123 (supports multiple)
+            const matches = body.match(/#(\d+)/g) || [];
+            const issueNumbers = [...new Set(matches.map(m => m.replace("#", "")))];
+
+            // If no issue refs, nothing to link — keep the rest of the automation anyway.
+            if (issueNumbers.length === 0) return;
+
+            const lower = body.toLowerCase();
+            const isPartial = lower.includes("partially fixes");
+            const keyword = isPartial ? "Related to" : "Fixes";
+
+            const issueRefs = issueNumbers.map(n => `#${n}`).join(", ");
+            const replacementLine = `**${keyword} ${issueRefs}**`;
+
+            // Replace your template’s first line if present; otherwise prepend it.
+            const templateLineRegex = /^\*\*This pull request.*?issue.*?\*\*\s*$/im;
+
+            let newBody;
+            if (templateLineRegex.test(body)) {
+              newBody = body.replace(templateLineRegex, replacementLine);
+            } else {
+              // Avoid duplicating if body already contains a standard linking/closing keyword
+              const alreadyHasKeyword = /(fixes|closes|resolves|related to)\s+#\d+/i.test(body);
+              if (alreadyHasKeyword) return;
+
+              newBody = `${replacementLine}\n\n${body}`;
+            }
+
+            if (newBody !== body) {
+              await github.rest.pulls.update({
+                owner,
+                repo,
+                pull_number: pr_number,
+                body: newBody,
+              });
+            }

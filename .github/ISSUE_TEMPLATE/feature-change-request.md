@@ -1,17 +1,17 @@
 ---
-name: Bug Report
-about: Reporting bugs in existing code
+name: Feature-Change Request
+about: Suggest a change in an existing feature
 title: ''
-labels: bug, good first issue
+labels: change, good first issue
 assignees: ''
 
 ---
 
-## The Problem
+## What needs to change
 
 - describe in bullet points
 
-## Suggested Solution (Optional)
+## Why does it need to change
 
 - describe in bullet points
 

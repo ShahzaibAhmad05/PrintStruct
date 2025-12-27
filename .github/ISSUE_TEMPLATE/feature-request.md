@@ -2,7 +2,7 @@
 name: Feature Request
 about: Suggest a new feature for this project
 title: ''
-labels: enhancement, good first issue
+labels: feature, good first issue
 assignees: ''
 
 ---
@@ -14,3 +14,7 @@ assignees: ''
 ## Suggested Solution (Optional)
 
 - describe in bullet points
+
+### Note
+
+If you want to get this issue assigned to you. Just comment `assign this issue to me`. You will be assigned to the issue instantly via GitHub-actions bot.

@@ -5,3 +5,4 @@ myenv/
 venv/
 .env/
 .vscode/
+.venv/

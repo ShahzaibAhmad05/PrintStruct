@@ -18,8 +18,5 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Install package (editable)
-        run: pip install -e .
-
-      - name: Test CLI (gitree)
-        run: gitree .
+      - name: Run unit tests
+        run: python -m unittest discover tests
