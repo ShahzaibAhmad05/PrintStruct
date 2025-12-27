@@ -84,3 +84,28 @@ class TestListingFlags(unittest.TestCase):
 
         for i in range(30):
             self.assertIn(f"file{i}.txt", result.stdout)
+
+
+    def test_entry_point_hidden_items(self):
+        # Create hidden files and directories
+        (self.root / ".hidden_file.txt").write_text("hidden")
+        (self.root / ".hidden_dir").mkdir()
+        (self.root / ".hidden_dir" / "nested.txt").write_text("nested")
+
+        # Test without --hidden-items flag (default behavior)
+        result_default = self._run_cli()
+
+        self.assertEqual(result_default.returncode, 0, msg=result_default.stderr)
+        self.assertTrue(result_default.stdout.strip())
+        self.assertIn("file.txt", result_default.stdout)
+        self.assertNotIn(".hidden_file.txt", result_default.stdout)
+        self.assertNotIn(".hidden_dir", result_default.stdout)
+
+        # Test with --hidden-items flag
+        result_with_flag = self._run_cli("--hidden-items")
+
+        self.assertEqual(result_with_flag.returncode, 0, msg=result_with_flag.stderr)
+        self.assertTrue(result_with_flag.stdout.strip())
+        self.assertIn("file.txt", result_with_flag.stdout)
+        self.assertIn(".hidden_file.txt", result_with_flag.stdout)
+        self.assertIn(".hidden_dir", result_with_flag.stdout)
