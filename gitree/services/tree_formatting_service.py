@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Set
 from ..utilities.gitignore import GitIgnoreMatcher
 from ..utilities.utils import read_file_contents, get_language_hint
 from ..utilities.logger import Logger, OutputBuffer
-from ..services.list_enteries import list_entries
+from .list_enteries import list_entries
 from ..constants.constant import (BRANCH, LAST, SPACE, VERT,
                                   FILE_EMOJI, EMPTY_DIR_EMOJI,
                                   NORMAL_DIR_EMOJI)

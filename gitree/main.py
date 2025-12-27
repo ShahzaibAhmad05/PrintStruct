@@ -5,10 +5,10 @@ if sys.platform.startswith('win'):      # fix windows unicode error on CI
     sys.stdout.reconfigure(encoding='utf-8')
 
 from .services.tree_service import run_tree_mode
-from .services.parser import parse_args, correct_args
+from .services.parsing_service import parse_args, correct_args
 from .utilities.config import resolve_config
 from .utilities.logger import Logger, OutputBuffer
-from .services.basic_args_handler import handle_basic_cli_args, resolve_root_paths
+from .services.basic_args_handling_service import handle_basic_cli_args, resolve_root_paths
 from .services.zipping_service import zip_roots
 from pathlib import Path
 

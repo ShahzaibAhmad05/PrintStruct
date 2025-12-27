@@ -305,7 +305,7 @@ def run_tree_mode(
 
     # Handle file exports
     if args.json or args.txt or args.md:
-        from .output_formatters import build_tree_data, write_outputs
+        from .tree_formatting_service import build_tree_data, write_outputs
 
         include_contents = not args.no_contents
 
