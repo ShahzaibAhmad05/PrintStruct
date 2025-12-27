@@ -10,6 +10,7 @@ from .utilities.config import resolve_config
 from .utilities.logger import Logger, OutputBuffer
 from .services.basic_args_handler import handle_basic_cli_args, resolve_root_paths
 from .services.zipping_service import zip_roots
+from pathlib import Path
 
 
 def main() -> None:
@@ -25,12 +26,12 @@ def main() -> None:
         - Use services/ and utilities/ modules for logic, and import their functions here
     """
     args = parse_args()
+    logger = Logger()
+    output_buffer = OutputBuffer()
+
 
     # Resolve --no-contents-for paths
     args.no_contents_for = [Path(p).resolve() for p in args.no_contents_for]
-
-    logger = Logger()
-    output_buffer = OutputBuffer()
 
 
     # Resolve configuration (handle user, global, and default config merging)

@@ -190,7 +190,6 @@ def parse_args() -> argparse.Namespace:
         help="Do not save file contents for specific files or directories"
     )
 
-
     return ap.parse_args()
 
 
