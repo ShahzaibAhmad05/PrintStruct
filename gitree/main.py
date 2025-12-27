@@ -8,9 +8,11 @@ from pathlib import Path
 from .services.draw_tree import draw_tree, print_summary
 from .services.zip_project import zip_project
 from .services.parser import parse_args
-from .utilities.utils import get_project_version, copy_to_clipboard
-from .utilities.config import load_user_config, create_default_config, open_config_in_editor, get_default_config, merge_config_with_args
+from .utilities.utils import copy_to_clipboard
+from .utilities.config import resolve_config
 from .utilities.logger import Logger
+from .services.files_selection import resolve_selected_files
+from .services.basic_cli_args import handle_basic_cli_args, resolve_root_paths
 
 
 def main() -> None:
@@ -22,52 +24,17 @@ def main() -> None:
     """
     args = parse_args()
 
-    # Load user configuration unless --no-config is specified
-    if not args.no_config:
-        config = load_user_config()
-        if not config:      # If the user has not setup a configuration file
-            config = get_default_config()
-            
-        # Merge config with args, precedence to CLI args
-        args = merge_config_with_args(config, args)
+    # Resolve configuration (handle user, global, and default config merging)
+    resolve_config(args)
 
 
-    # Handle basic CLI flags first
-    if args.init_config:
-        create_default_config()
-        return
-    
-    if args.config_user:
-        open_config_in_editor()
-        return
-
-    if args.version:
-        print(get_project_version())
-        return
+    # if some specific Basic CLI args given, execute and return
+    # Handles for --version, --init-config, --config-user, --no-config
+    if handle_basic_cli_args(args): return
 
 
     # Validate and resolve all paths
-    roots = []
-    for path_str in args.paths:
-        # Check if path contains glob wildcards
-        if '*' in path_str or '?' in path_str:
-            # Expand glob pattern
-            matches = glob.glob(path_str)
-            if not matches:
-                print(f"Error: no matches found for pattern: {path_str}", file=sys.stderr)
-                raise SystemExit(1)
-            for match in matches:
-                roots.append(Path(match).resolve())
-        else:
-            # Regular path without wildcards
-            path = Path(path_str).resolve()
-            if not path.exists():
-                print(f"Error: path not found: {path}", file=sys.stderr)
-                raise SystemExit(1)
-            roots.append(path)
-
-    # If --no-limit is set, disable max_items
-    max_items = None if args.no_limit else args.max_items
+    roots = resolve_root_paths(args)
 
 
     # Combine file types from both singular and plural flags
@@ -164,7 +131,7 @@ def main() -> None:
                 extra_excludes=args.exclude,
                 respect_gitignore=not args.no_gitignore,
                 gitignore_depth=args.gitignore_depth,
-                max_items=max_items,
+                max_items=args.max_items,
                 exclude_depth=args.exclude_depth,
                 no_files=args.no_files,
                 emoji=args.emoji,
@@ -215,7 +182,7 @@ def main() -> None:
                 extra_excludes=args.exclude,
                 respect_gitignore=not args.no_gitignore,
                 gitignore_depth=args.gitignore_depth,
-                max_items=max_items,
+                max_items=args.max_items,
                 exclude_depth=args.exclude_depth,
                 no_files=args.no_files,
                 whitelist=selected_files,

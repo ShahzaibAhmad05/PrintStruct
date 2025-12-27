@@ -222,3 +222,25 @@ def merge_config_with_args(config: dict, args: argparse.Namespace) -> argparse.N
                 setattr(args, arg_key, value)
 
     return args
+
+
+def resolve_config(args: argparse.Namespace) -> Dict[str, Any]:
+    """
+    Resolves the final configuration by merging user config with CLI args.
+
+    Args:
+        args: Parsed command-line arguments
+
+    Returns:
+        dict: Final configuration dictionary
+    """
+    # Load user configuration unless --no-config is specified
+    if not args.no_config:
+        config = load_user_config()
+        if not config:      # If the user has not setup a configuration file
+            config = get_default_config()
+            
+        # Merge config with args, precedence to CLI args
+        args = merge_config_with_args(config, args)
+
+    return config
