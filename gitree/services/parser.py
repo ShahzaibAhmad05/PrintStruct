@@ -150,6 +150,12 @@ def parse_args() -> argparse.Namespace:
         default=argparse.SUPPRESS,
         help="Don't include file contents when exporting",
     )
+    ap.add_argument(
+        "--verbose",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Enable verbose output for debugging",
+    )
 
     # Control / meta flags (not config-backed)
     ap.add_argument(

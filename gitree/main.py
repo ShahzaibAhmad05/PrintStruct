@@ -193,8 +193,11 @@ def main() -> None:
                 include_contents=include_contents
             )
 
-
     output_buffer.flush()
+    if args.verbose:
+        print("\nLOG:")
+        logger.flush()
+
 
 if __name__ == "__main__":
     main()

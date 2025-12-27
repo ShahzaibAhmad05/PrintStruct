@@ -49,6 +49,7 @@ def get_default_config() -> Dict[str, Any]:
         "no_limit": False,
         "no_contents": False,
         "summary": False,
+        "verbose": False,
     }
 
 

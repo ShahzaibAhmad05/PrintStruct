@@ -41,8 +41,12 @@ class Logger:
         """
         Print all stored debug messages to the terminal and clear the buffer.
         """
+        if not self._messages:
+            print("No log messages to display.")
+            return
+        
         for message in self._messages:
-            print(message, file=sys.stderr)
+            print(message)
         self._messages.clear()
 
 
