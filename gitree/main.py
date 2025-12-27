@@ -9,6 +9,7 @@ from .services.zip_project import zip_project
 from .services.parser import parse_args
 from .utilities.utils import get_project_version, copy_to_clipboard
 from .utilities.config import load_config, create_default_config, open_config_in_editor, get_default_config
+from .utilities.logger import Logger
 
 
 def main() -> None:
