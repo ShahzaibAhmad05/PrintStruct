@@ -5,6 +5,7 @@ import subprocess
 import platform
 from pathlib import Path
 from typing import Dict, Any, Optional
+import argparse
 
 
 def get_config_path() -> Path:
@@ -20,15 +21,34 @@ def get_default_config() -> Dict[str, Any]:
     """
     return {
         "max_items": 20,
-        "depth": None,
+        "max_depth": None,
         "gitignore_depth": None,
         "exclude_depth": None,
-        "emoji": False,
-        "show_all": False,
+
+        "hidden_items": False,
+        "exclude": [],
+        "include": [],
+        "include_file_type": None,
+        "include_file_types": [],
+
+        # export/IO related
+        "zip": None,
+        "json": None,
+        "txt": None,
+        "md": None,
+        "output": None,
+        "copy": False,
+
+        # modes
+        "interactive": False,
+
+        # toggles
+        "emoji": False, 
         "no_gitignore": False,
         "no_files": False,
         "no_limit": False,
-        "summary": False
+        "no_contents": False,
+        "summary": False,
     }
 
 
@@ -78,7 +98,7 @@ def validate_config(config: Dict[str, Any]) -> None:
             sys.exit(1)
 
 
-def load_config() -> Optional[Dict[str, Any]]:
+def load_user_config() -> Optional[Dict[str, Any]]:
     """
     Loads configuration from config.json if it exists.
     Returns None if file doesn't exist.
@@ -178,3 +198,27 @@ def open_config_in_editor() -> None:
         print(f"Please manually open: {config_path.absolute()}", file=sys.stderr)
         print(f"Or set your EDITOR environment variable to your preferred editor.", file=sys.stderr)
         sys.exit(1)
+
+
+def merge_config_with_args(config: dict, args: argparse.Namespace) -> argparse.Namespace:
+    """
+    Replaces the absent values in the args with values from config.
+
+    Args:
+        config: Configuration dictionary loaded from config.json
+        args: Parsed command-line arguments
+    
+    Returns:
+        argparse.Namespace: Merged arguments with config values filled in
+    """
+    for key, value in config.items():
+        arg_key = key.replace("-", "_")
+
+        if not hasattr(args, arg_key):
+            # handle inverted emoji flag
+            if arg_key == "emoji":
+                setattr(args, arg_key, not value)
+            else:
+                setattr(args, arg_key, value)
+
+    return args

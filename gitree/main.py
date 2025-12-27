@@ -1,3 +1,4 @@
+# main.py
 from __future__ import annotations
 import sys, io, glob
 if sys.platform.startswith('win'):      # fix windows unicode error on CI
@@ -8,7 +9,7 @@ from .services.draw_tree import draw_tree, print_summary
 from .services.zip_project import zip_project
 from .services.parser import parse_args
 from .utilities.utils import get_project_version, copy_to_clipboard
-from .utilities.config import load_config, create_default_config, open_config_in_editor, get_default_config
+from .utilities.config import load_user_config, create_default_config, open_config_in_editor, get_default_config, merge_config_with_args
 from .utilities.logger import Logger
 
 
@@ -21,11 +22,21 @@ def main() -> None:
     """
     args = parse_args()
 
-    # Handle config + version commands that exit immediately
+    # Load user configuration unless --no-config is specified
+    if not args.no_config:
+        config = load_user_config()
+        if not config:      # If the user has not setup a configuration file
+            config = get_default_config()
+            
+        # Merge config with args, precedence to CLI args
+        args = merge_config_with_args(config, args)
+
+
+    # Handle basic CLI flags first
     if args.init_config:
         create_default_config()
         return
-
+    
     if args.config_user:
         open_config_in_editor()
         return
@@ -34,37 +45,6 @@ def main() -> None:
         print(get_project_version())
         return
 
-    # Load config file if it exists and --no-config is not set
-    if not args.no_config:
-        config = load_config()
-        if config:      # If the user has setup a configuration file
-            defaults = get_default_config()
-
-            # Merge config values with args (CLI args take precedence)
-            # Only use config value if arg is still at its default value
-            if args.max_items == defaults["max_items"] and "max_items" in config:
-                args.max_items = config["max_items"]
-            if args.max_depth == defaults["depth"] and "depth" in config:
-                args.max_depth = config["depth"]
-            if args.gitignore_depth == defaults["gitignore_depth"] and "gitignore_depth" in config:
-                args.gitignore_depth = config["gitignore_depth"]
-            if args.exclude_depth == defaults["exclude_depth"] and "exclude_depth" in config:
-                args.exclude_depth = config["exclude_depth"]
-            if args.emoji == defaults["emoji"] and "emoji" in config:  
-                # Note: --emoji flag uses action="store_false" (inverted)
-                # Config uses intuitive naming: true = show emojis
-                # But args.emoji is inverted: False = show emojis
-                args.emoji = not config["emoji"]
-            if args.hidden_items == defaults["show_all"] and "show_all" in config:
-                args.hidden_items = config["show_all"]
-            if args.no_gitignore == defaults["no_gitignore"] and "no_gitignore" in config:
-                args.no_gitignore = config["no_gitignore"]
-            if args.no_files == defaults["no_files"] and "no_files" in config:
-                args.no_files = config["no_files"]
-            if args.no_limit == defaults["no_limit"] and "no_limit" in config:
-                args.no_limit = config["no_limit"]
-            if args.summary == defaults["summary"] and "summary" in config:
-                args.summary = config["summary"]
 
     # Validate and resolve all paths
     roots = []
@@ -88,6 +68,7 @@ def main() -> None:
 
     # If --no-limit is set, disable max_items
     max_items = None if args.no_limit else args.max_items
+
 
     # Combine file types from both singular and plural flags
     include_file_types = []
