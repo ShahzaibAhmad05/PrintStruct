@@ -187,7 +187,13 @@ def zip_project(
             z.write(root, root.name)
 
 
-def zip_roots(args: argparse.Namespace, roots: List[Path], output_buffer: OutputBuffer, logger: Logger) -> None:
+def zip_roots(
+    args: argparse.Namespace, 
+    roots: List[Path], 
+    output_buffer: OutputBuffer, 
+    logger: Logger,
+    selected_files_map: Optional[dict] = None
+) -> None:
     """
     Zips the given roots into a zip file specified in args.zip.
 
@@ -196,28 +202,16 @@ def zip_roots(args: argparse.Namespace, roots: List[Path], output_buffer: Output
         roots (List[Path]): List of root paths to zip
         output_buffer (OutputBuffer): Buffer to write output to
         logger (Logger): Logger instance for logging
+        selected_files_map (Optional[dict]): Map of root path to selected files (set of strings)
     """
     import zipfile
     zip_path = Path(args.zip).resolve()
+    selected_files_map = selected_files_map or {}
 
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as z:
         for root in roots:
-            # Interactive mode for each path (if enabled)
-            selected_files = None
-            if args.interactive:
-                from ..services.interactive import select_files
-                selected_files = select_files(
-                    root=root,
-                    output_buffer=output_buffer,
-                    logger=logger,
-                    respect_gitignore=not args.no_gitignore,
-                    gitignore_depth=args.gitignore_depth,
-                    exclude_patterns=args.exclude,
-                    include_patterns=args.include,
-                    include_file_types=args.include_file_types
-                )
-                if not selected_files:
-                    continue
+            # Interactive mode handled in main.py now
+            selected_files = selected_files_map.get(root)
 
             # Add this root to the zip (in append mode logic)
             from ..services.zipping_service import zip_project_to_handle

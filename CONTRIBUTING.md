@@ -24,6 +24,31 @@ If you pass all checks, the issue will be automatically assigned to you! 🎉
 **Note:** Opening a draft PR counts as having a PR linked. This allows you to claim additional issues while working on your current ones.
 
 
+## Issue Templates
+
+This project uses multiple issue templates to help contributors report issues in a clear and structured way.
+
+When creating a new issue, you will be asked to choose a suitable template such as:
+
+- Bug Report
+- Documentation
+- Feature Request
+- Feature Change Request
+
+Each template contains guided sections (bullet points) that explain what information should be provided.  
+Please fill out all relevant sections of the selected template to help maintainers understand and review the issue efficiently.
+
+
+## Pull Request Template
+
+This project uses a pull request template that is automatically loaded when opening a new pull request.
+
+The template helps contributors include important details such as the related issue number and confirmation that the changes are ready for review.
+
+Please review and complete the pull request template before submitting your PR.  
+Following the template helps maintainers review contributions faster and keeps submissions consistent.
+
+
 ## Coding Guidelines
 
 - Follow the existing Python style and structure in the project.

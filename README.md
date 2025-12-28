@@ -1,6 +1,37 @@
-# Gitree
+# gitree 🌴
 
 **A git-aware CLI tool to provide LLM context for coding projects by combining project files into a single file with a number of different formats to choose from.**
+
+<br>
+
+<p align="center">
+  <a href="https://github.com/shahzaibahmad05/gitree/stargazers">
+    <img alt="GitHub stars" src="https://img.shields.io/github/stars/shahzaibahmad05/gitree?logo=github" />
+  </a>
+  
+  <a href="https://pypi.org/project/gitree/">
+    <img src="https://img.shields.io/pypi/v/gitree?style=flat&logo=pypi&label=PyPI&color=blue" />
+  </a>
+
+  <a href="https://github.com/shahzaibahmad05/gitree/network/members">
+    <img alt="GitHub forks" src="https://img.shields.io/github/forks/shahzaibahmad05/gitree?style=flat&color=blue" />
+  </a>
+    
+  <a href="https://github.com/shahzaibahmad05/gitree/graphs/contributors">
+    <img alt="GitHub Contributors" src="https://img.shields.io/github/contributors/shahzaibahmad05/gitree" />
+  </a>
+
+  <a href="https://github.com/shahzaibahmad05/gitree/issues">
+    <img alt="Issues Closed" src="https://img.shields.io/github/issues-closed/shahzaibahmad05/gitree?color=orange" />
+  </a>
+
+  <a href="https://github.com/shahzaibahmad05/gitree/pulls">
+    <img alt="pull requests closed" src="https://img.shields.io/github/issues-pr-closed/shahzaibahmad05/gitree?color=yellow" />
+  </a>
+  <br />
+  <br />
+</p>
+
 
 ## ✨ Features
 
@@ -23,11 +54,14 @@
 
 ## 📦 Installation
 
-Run this command in your terminal:
+Install using pip (python package manager):
 
 ```
-# Install using pip
-pip install gitree       
+# Install the latest version using pip
+pip install gitree    
+
+# Get the stable version instead (older, lacks features)
+pip install gitree==0.1.3
 ```
 
 ### 💡 Usage
@@ -196,38 +230,44 @@ Gitree uses Continuous Integration (CI) to ensure code quality and prevent regre
 
 In addition to the directory path, the following options are available:
 
-| Argument            | Description |
-|---------------------|-------------|
-| `--version`, `-v`   | Displays the installed version. |
-| `--max-depth`           | Limits recursion depth. Example: `--depth 1` shows only top-level files and folders. |
-| `--hidden-items`    | Includes hidden files and directories. Does not override `.gitignore`. |
-| `--exclude`         | Patterns of files to exclude. Example: `--exclude *.pyc __pycache__`. |
-| `--exclude-depth`   | Limits depth for `--exclude` patterns. Example: `--exclude-depth 2` applies exclude rules only to first 2 levels. |
-| `--gitignore-depth` | Controls how deeply `.gitignore` files are discovered. Example: `--gitignore-depth 0` uses only the root `.gitignore`. |
-| `--no-gitignore`    | Ignores all `.gitignore` rules when set. |
-| `--max-items`       | Limits items shown per directory. Extra items are summarized as `... and x more items`. Default: `20`. |
-| `--no-limit`        | Removes the per-directory item limit. |
-| `--no-files`        | Hide files from the tree (only show directories). |
-| `--emoji`, `-e`     | Show emojis in tree output. |
-| `--summary`         | Print a summary of the number of files and folders at each level. |
-| `--zip [name]`, `-z` | Zips the project while respecting `.gitignore`. Example: `--zip a` creates `a.zip`. |
-| `--json [file]`     | Export tree as JSON to specified file. Example: `--json tree.json`. |
-| `--txt [file]`      | Export tree as text to specified file. Example: `--txt tree.txt`. |
-| `--md [file]`       | Export tree as Markdown to specified file. Example: `--md tree.md`. |
-| `--output [file]`, `-o` | Save tree structure to file. Example: `--output tree.txt` or `--output tree.md` for markdown format. |
-| `--copy`, `-c`      | Copy tree output to clipboard. |
-| `--include`         | Patterns of files to include (used in interactive mode). Example: `--include *.py *.js`. |
-| `--include-file-type` | Include files of a specific type. Example: `--include-file-type json` or `--include-file-type .py`. Case-insensitive. |
-| `--include-file-types` | Include files of multiple types. Example: `--include-file-types png jpg json`. Case-insensitive. |
-| `--json [file]`     | Export tree as JSON to specified file. **By default, includes file contents** (up to 1MB per file). |
-| `--txt [file]`      | Export tree as text to specified file. **By default, includes file contents** (up to 1MB per file). |
-| `--md [file]`       | Export tree as Markdown to specified file. **By default, includes file contents** with syntax highlighting (up to 1MB per file). |
-| `--no-contents`     | Don't include file contents when exporting to JSON, TXT, or MD formats. Only the tree structure will be included. |
-| `--interactive`, `-i` | Interactive mode: select files to include using a terminal-based UI. |
-| `--include`         | Patterns of files to include. Example: `--include *.py *.js`. |
-| `--init-config`     | Create a default `config.json` file in the current directory. |
-| `--config-user`     | Open `config.json` in the default editor. |
-| `--no-config`       | Ignore `config.json` and use hardcoded defaults. |
+### Basic CLI flags
+| Argument | Description |
+|----------|-------------|
+| `--version`, `-v` | Displays the installed version. |
+| `--interactive`, `-i` | Interactive selection UI. |
+| `--init-config` | Create a default `config.json` in the current directory. |
+| `--config-user` | Open `config.json` in the default editor. |
+| `--no-config` | Ignore `config.json` and use hardcoded defaults. |
+
+### Input/Output flags
+| Argument | Description |
+|----------|-------------|
+| `--zip [name]`, `-z` | Zip the project (respects `.gitignore`). Example: `--zip a` → `a.zip`. |
+| `--json [file]` | Export tree as JSON (includes file contents by default, up to 1MB/file). |
+| `--txt [file]` | Export tree as text (includes file contents by default, up to 1MB/file). |
+| `--md [file]` | Export tree as Markdown (includes contents with syntax highlighting). |
+| `--output [file]`, `-o` | Save tree structure to file (text or markdown). |
+| `--copy`, `-c` | Copy output to clipboard. |
+| `--no-contents` | Export only the tree structure (no file contents). |
+
+### Listing flags
+| Argument | Description |
+|----------|-------------|
+| `--max-depth` | Limit recursion depth (e.g., `--max-depth 1`). |
+| `--hidden-items` | Include hidden files and directories (does not override `.gitignore`). |
+| `--exclude [pattern]` | Exclude patterns (e.g., `--exclude *.pyc __pycache__`). |
+| `--exclude-depth [n]` | Limit depth for exclude patterns (e.g., `--exclude-depth 2`). |
+| `--gitignore-depth [n]` | Control discovery depth for `.gitignore` (e.g., `--gitignore-depth 0`). |
+| `--no-gitignore` | Ignore all `.gitignore` rules. |
+| `--max-items` | Limit items per directory (default: 20). |
+| `--no-limit` | Remove per-directory item limit. |
+| `--no-files` | Show only directories (hide files). |
+| `--emoji`, `-e` | Use emojis in output. |
+| `--summary` | Print file/folder counts per level. |
+| `--include [pattern]` | Include patterns (often used with interactive mode). |
+| `--include-file-type` | Include a specific file type (e.g., `.py`, `json`). |
+| `--include-file-types` | Include multiple file types (e.g., `png jpg json`). |
+
 
 
 ## 📝 File Contents in Exports

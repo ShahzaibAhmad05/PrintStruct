@@ -189,6 +189,12 @@ def parse_args() -> argparse.Namespace:
         metavar="PATH",
         help="Do not save file contents for specific files or directories"
     )
+    ap.add_argument(
+        "--files-first",
+        action="store_true",
+        default=False,
+        help="Print files before directories in the tree output",
+    )
 
     return ap.parse_args()
 
@@ -199,7 +205,7 @@ def correct_args(args: argparse.Namespace) -> argparse.Namespace:
 
     Args:
         args: Parsed argparse.Namespace object
-    
+
     Returns:
         Corrected argparse.Namespace object
     """

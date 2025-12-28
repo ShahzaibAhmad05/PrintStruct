@@ -51,14 +51,12 @@ jobs:
             // If no issue refs, nothing to link — keep the rest of the automation anyway.
             if (issueNumbers.length === 0) return;
 
-            const lower = body.toLowerCase();
-            const isPartial = lower.includes("partially fixes");
-            const keyword = isPartial ? "Related to" : "Fixes";
+            const keyword = "Fixes";
 
             const issueRefs = issueNumbers.map(n => `#${n}`).join(", ");
             const replacementLine = `**${keyword} ${issueRefs}**`;
 
-            // Replace your template’s first line if present; otherwise prepend it.
+            // Replace your template's first line if present; otherwise prepend it.
             const templateLineRegex = /^\*\*This pull request.*?issue.*?\*\*\s*$/im;
 
             let newBody;

@@ -5,7 +5,7 @@ from ..utilities.gitignore import GitIgnoreMatcher
 from ..utilities.utils import matches_file_type
 from ..utilities.logger import Logger, OutputBuffer
 from ..services.list_enteries import list_entries
-import pathspec
+import pathspec, argparse
 
 def select_files(
     *,
@@ -16,7 +16,9 @@ def select_files(
     gitignore_depth: int = None,
     extra_excludes: List[str] = None,
     include_patterns: List[str] = None,
-    include_file_types: List[str] = None
+    exclude_patterns: List[str] = None,
+    include_file_types: List[str] = None,
+    files_first: bool = False,
 ) -> Set[str]:
     """
     Present an interactive prompt for users to select files from a directory tree.
@@ -82,6 +84,8 @@ def select_files(
         entries, _ = list_entries(
             dirpath,
             root=root,
+            output_buffer=output_buffer,
+            logger=logger,
             gi=gi,
             spec=spec,
             show_all=False,
@@ -123,11 +127,59 @@ def select_files(
         return set()
 
     selected_rels = questionary.checkbox(
-        "Select files to include:",
-        choices=files_to_select
-    ).ask()
+    "📂 Select files to include:",
+    choices=files_to_select,
+    instruction="Use ↑ ↓ to navigate • Space to toggle • Enter to confirm"
+).ask()
+
+
 
     if selected_rels is None: # Cancelled
         return set()
 
     return {str(root / rel) for rel in selected_rels}
+
+
+def get_interactive_file_selection(
+    *,
+    roots: List[Path],
+    output_buffer: OutputBuffer,
+    logger: Logger,
+    args: argparse.Namespace,
+) -> dict:
+    """
+    Get interactive file selection for multiple root directories.
+
+    Args:
+        roots (List[Path]): List of root directory paths
+        output_buffer (OutputBuffer): Buffer to write output to
+        logger (Logger): Logger instance for logging
+        respect_gitignore (bool): If True, respect .gitignore rules. Defaults to True
+        gitignore_depth (int): Maximum depth to search for .gitignore files
+        extra_excludes (List[str]): Additional exclude patterns
+        include_patterns (List[str]): Patterns for files to include
+        include_file_types (List[str]): File types (extensions) to include
+
+    Returns:
+        dict: Mapping of root paths to sets of selected absolute file paths
+    """
+    # We need to filter roots if user cancels selection or selects nothing?
+    # Current behavior in services: if not selected_files: continue.
+    # So we should probably keep that logic.
+    selected_files_map = {}
+
+    for root in roots:
+        selected = select_files(
+            root=root,
+            output_buffer=output_buffer,
+            logger=logger,
+            respect_gitignore=not args.no_gitignore,
+            gitignore_depth=args.gitignore_depth,
+            extra_excludes=args.exclude,
+            include_patterns=args.include,
+            include_file_types=args.include_file_types
+        )
+        if selected:
+            selected_files_map[root] = selected
+
+    return selected_files_map
