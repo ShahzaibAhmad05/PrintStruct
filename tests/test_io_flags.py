@@ -38,7 +38,7 @@ class TestIOFlags(unittest.TestCase):
         )
 
 
-    def test_entry_point_zip_creates_archive(self):
+    def test_entry_point_zip(self):
         zip_path = self.root / "output.zip"
 
         result = self._run_cli("--zip", zip_path.name)
@@ -51,7 +51,7 @@ class TestIOFlags(unittest.TestCase):
             self.assertIn("file.txt", names)
 
 
-    def test_entry_point_output_writes_tree_file(self):
+    def test_entry_point_output(self):
         out_path = self.root / "tree_output.txt"
 
         result = self._run_cli("--output", out_path.name)
