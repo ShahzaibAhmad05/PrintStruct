@@ -19,6 +19,10 @@ class BaseCLISetup(unittest.TestCase):
         # Base project structure
         (self.root / "file.txt").write_text("hello")
 
+        # Folder with nested file, common for most tests
+        folder = self.root / "folder"
+        folder.mkdir()
+        (folder / "nested.txt").write_text("nested")
 
     def tearDown(self):
         # Cleanup temp directory
