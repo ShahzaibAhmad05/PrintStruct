@@ -53,10 +53,7 @@ def list_entries(
         include_spec = pathspec.PathSpec.from_lines("gitwildmatch", include_patterns)
 
     for e in iter_dir(directory):
-        if not show_all and e.name.startswith("."):
-            continue
-
-        # Check for forced inclusion (overrides gitignore and other filters)
+        # Check for forced inclusion (overrides gitignore, hidden files, and other filters)
         is_force_included = False
         if include_spec or include_file_types:
             if e.is_file():
@@ -74,12 +71,14 @@ def list_entries(
                     # Check if the directory itself matches the pattern
                     if include_spec.match_file(rel_path):
                         is_force_included = True
-        
+
         if is_force_included:
             out.append(e)
             continue
-        
-        # Normal filters
+
+        # Normal filters (hidden files check moved here, after force-include logic)
+        if not show_all and e.name.startswith("."):
+            continue
         if gi.is_ignored(e, spec):
             continue
         if matches_extra(e, root, extra_excludes, exclude_depth):

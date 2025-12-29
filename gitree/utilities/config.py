@@ -136,7 +136,7 @@ def load_user_config(logger: Logger) -> Optional[Dict[str, Any]]:
         sys.exit(1)
 
     # Validate the config
-    validate_config(config)
+    validate_config(logger, config)
 
     return config
 

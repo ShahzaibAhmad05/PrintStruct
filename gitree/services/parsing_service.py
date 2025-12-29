@@ -131,9 +131,10 @@ def parse_args() -> argparse.Namespace:
         help="Patterns of files to include (e.g. *.py)",
     )
     ap.add_argument(
-        "--include-file-type", "--include-file-types",
+        "--include-file-types", "--include-file-type",
         nargs="*",
         default=argparse.SUPPRESS,
+        dest="include_file_types",
         help="Include files of multiple types, or a specific type (e.g. png jpg)",
     )
     ap.add_argument(
