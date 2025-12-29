@@ -12,8 +12,6 @@ class TestListingFlags(BaseCLISetup):
     def test_entry_point_emoji(self):
         # Create empty and simple directories to test both emojis
         (self.root / "empty_folder").mkdir()
-        (self.root / "folder").mkdir()
-        (self.root / "folder" / "nested.txt").write_text('foo')
         result = self._run_cli("--emoji", "--no-color")
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
@@ -25,10 +23,6 @@ class TestListingFlags(BaseCLISetup):
 
 
     def test_entry_point_no_files(self):
-        # Additional structure specific to this test
-        (self.root / "folder").mkdir()
-        (self.root / "folder" / "nested.txt").write_text("nested")
-
         result = self._run_cli("--no-files")
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
@@ -39,9 +33,6 @@ class TestListingFlags(BaseCLISetup):
 
 
     def test_entry_point_max_depth(self):
-        (self.root / "folder").mkdir()
-        (self.root / "folder" / "nested.txt").write_text("nested")
-
         result = self._run_cli("--max-depth", "1")
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
@@ -54,7 +45,6 @@ class TestListingFlags(BaseCLISetup):
     def test_entry_point_no_limit(self):
         # Override base structure for this test
         (self.root / "file.txt").unlink()
-        (self.root / "folder").mkdir()
 
         for i in range(30):  # default limit is 20
             (self.root / "folder" / f"file{i}.txt").write_text("data")
@@ -117,7 +107,6 @@ class TestListingFlags(BaseCLISetup):
 
     def test_entry_point_no_color(self):
         # Create additional structure
-        (self.root / "folder").mkdir()
         (self.root / ".hidden_file").write_text("hidden")
 
         # Test with color (default) - should contain ANSI color codes
@@ -134,14 +123,13 @@ class TestListingFlags(BaseCLISetup):
         self.assertEqual(result_no_color.returncode, 0, msg=result_no_color.stderr)
         self.assertTrue(result_no_color.stdout.strip())
         self.assertNotIn("\x1b[", result_no_color.stdout, msg="Expected no ANSI color codes with --no-color flag")
-        
+
 
     def test_entry_point_include(self):
         # Create a .gitignore to test that --include overrides it
         (self.root / ".gitignore").write_text("*.py\n")
         (self.root / "script.py").write_text("python")
         (self.root / "data.json").write_text("{}")
-        (self.root / "folder").mkdir()
         (self.root / "folder" / "test.py").write_text("test")
 
         # Without --include, .py files should be ignored
@@ -168,7 +156,6 @@ class TestListingFlags(BaseCLISetup):
         (self.root / "script.py").write_text("python")
         (self.root / "data.json").write_text("{}")
         (self.root / "readme.md").write_text("docs")
-        (self.root / "folder").mkdir()
         (self.root / "folder" / "test.py").write_text("test")
 
         # Test --exclude to hide .py files
@@ -191,7 +178,6 @@ class TestListingFlags(BaseCLISetup):
         (self.root / "file.log").write_text("log")
         (self.root / "cache.tmp").write_text("temp")
         (self.root / "data.json").write_text("{}")
-        (self.root / "folder").mkdir()
         (self.root / "folder" / "debug.log").write_text("debug")
 
         # Test --exclude with multiple patterns
