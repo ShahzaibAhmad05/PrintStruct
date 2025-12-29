@@ -58,18 +58,6 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Create a default config.json file in the current directory",
     )
-    ap.add_argument(
-        "--max-lines",
-        type=max_lines_int,
-        default=argparse.SUPPRESS,
-        help="Limit lines shown in the tree output",
-    )
-    ap.add_argument(
-        "--no-max-lines",
-        action="store_true",
-        default=argparse.SUPPRESS,
-        help="Disable max lines limit",
-    )
     basic.add_argument(
         "--config-user",
         action="store_true",
@@ -198,6 +186,18 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         default=argparse.SUPPRESS,
         help="Show all items regardless of count",
+    )
+    listing.add_argument(
+        "--max-lines",
+        type=max_lines_int,
+        default=argparse.SUPPRESS,
+        help="Limit lines shown in the tree output",
+    )
+    listing.add_argument(
+        "--no-max-lines",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Disable max lines limit",
     )
     listing.add_argument(
         "--no-files",
