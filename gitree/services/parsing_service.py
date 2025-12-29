@@ -241,6 +241,12 @@ def parse_args() -> argparse.Namespace:
         default=False,
         help="Print files before directories in the tree output",
     )
+    ap.add_argument(
+        "--no-color",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Disable colorized output",
+    )
 
     return ap.parse_args()
 
