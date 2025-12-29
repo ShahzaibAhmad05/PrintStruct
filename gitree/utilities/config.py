@@ -22,6 +22,7 @@ def get_default_config() -> Dict[str, Any]:
     """
     return {
         "max_items": 20,
+        "max_lines": 30,
         "max_depth": None,
         "gitignore_depth": None,
         "exclude_depth": None,
@@ -49,6 +50,7 @@ def get_default_config() -> Dict[str, Any]:
         "no_gitignore": False,
         "no_files": False,
         "no_limit": False,
+        "no_max_lines": False,
         "no_contents": False,
         "override_files": True,
         "summary": False,
@@ -88,6 +90,16 @@ def validate_config(logger: Logger, config: Dict[str, Any]) -> None:
             if value < 1 or value > 10000:
                 logger.log(Logger.ERROR, 
                     "key 'max_items' must be between 1 and 10000, got {value} in config.json")
+                sys.exit(1)
+
+        elif key == "max_lines":
+            if not isinstance(value, int):
+                logger.log(Logger.ERROR, 
+                    f"key 'max_lines' must be int, got {type(value).__name__} in config.json")
+                sys.exit(1)
+            if value < 1:
+                logger.log(Logger.ERROR, 
+                    f"key 'max_lines' must be positive, got {value} in config.json")
                 sys.exit(1)
 
         elif key in optional_int_keys:

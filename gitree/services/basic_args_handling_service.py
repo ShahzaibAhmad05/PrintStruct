@@ -46,23 +46,24 @@ def resolve_root_paths(args: argparse.Namespace, logger: Logger) -> List[str]:
     return roots
 
 
-def handle_basic_cli_args(args: argparse.Namespace) -> bool:
+def handle_basic_cli_args(args: argparse.Namespace, logger: Logger) -> bool:
     """
     Handle basic CLI args and returns True if one was handled.
 
     Args:
         args: Parsed argparse.Namespace object
+        logger: Logger instance for logging
     """
     if args.init_config:
-        create_default_config()
+        create_default_config(logger)
         return True
-    
+
     if args.config_user:
-        open_config_in_editor()
+        open_config_in_editor(logger)
         return True
 
     if args.version:
         print(get_project_version())
         return True
-    
+
     return False

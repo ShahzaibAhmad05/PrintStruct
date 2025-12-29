@@ -22,6 +22,7 @@ def build_tree_data(
     respect_gitignore: bool,
     gitignore_depth: Optional[int],
     max_items: Optional[int] = None,
+    max_lines: Optional[int] = None,
     exclude_depth: Optional[int] = None,
     no_files: bool = False,
     whitelist: Optional[Set[str]] = None,
@@ -54,11 +55,17 @@ def build_tree_data(
         "children": []
     }
 
+    lines=1 # Count lines for max_lines limit
+    stop_writing=False # Flag to stop writing when max_lines is reached
+
     def rec(dirpath: Path, current_depth: int, patterns: List[str]) -> List[Dict[str, Any]]:
         """Recursively build tree data for a directory."""
+        nonlocal lines, stop_writing
         if depth is not None and current_depth >= depth:
             return []
 
+        if stop_writing:
+            return []
         # Handle .gitignore patterns
         if respect_gitignore and gi.within_depth(dirpath):
             gi_path = dirpath / ".gitignore"
@@ -87,6 +94,7 @@ def build_tree_data(
             show_all=show_all,
             extra_excludes=extra_excludes,
             max_items=max_items,
+            max_lines=max_lines,
             exclude_depth=exclude_depth,
             no_files=no_files,
             include_patterns=include_patterns,
@@ -110,7 +118,19 @@ def build_tree_data(
 
         # Build children list
         children = []
-        for entry in entries:
+        for i, entry in enumerate(entries):
+            if stop_writing:
+                break
+
+            if max_lines is not None and lines >= max_lines:
+                remaining = len(entries) - i + truncated
+                children.append({
+                    "name": f"... and more lines",
+                    "type": "truncated"
+                })
+                stop_writing = True
+                break
+
             if entry.is_file():
                 file_node = {
                     "name": entry.name,
@@ -122,7 +142,9 @@ def build_tree_data(
                 file_node["contents"] = read_file_contents(entry)
 
                 children.append(file_node)
+                lines += 1
             elif entry.is_dir():
+                lines += 1
                 child_node = {
                     "name": entry.name,
                     "type": "directory",
@@ -131,11 +153,12 @@ def build_tree_data(
                 children.append(child_node)
 
         # Add truncation marker if needed
-        if truncated > 0:
+        if truncated > 0 and not stop_writing:
             children.append({
                 "name": f"... and {truncated} more items",
                 "type": "truncated"
             })
+            lines += 1
 
         return children
 
