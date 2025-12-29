@@ -63,14 +63,11 @@ def draw_tree(
 
     output_buffer.write(root.name)
     lines = 1
-    stop_writing = False
+    truncation_prefix = None
 
     def rec(dirpath: Path, prefix: str, current_depth: int, patterns: List[str]) -> None:
-        nonlocal lines, stop_writing
+        nonlocal lines, truncation_prefix
         if depth is not None and current_depth >= depth:
-            return
-
-        if stop_writing:
             return
 
         if respect_gitignore and gi.within_depth(dirpath):
@@ -127,14 +124,14 @@ def draw_tree(
 
 
         for i, entry in enumerate(entries):
-            if stop_writing:
-                return
-
             if max_lines is not None and lines >= max_lines:
-                remaining = len(entries) - i + truncated
-                output_buffer.write(prefix + LAST + f"... and more lines")
-                stop_writing = True
-                return
+                if truncation_prefix is None:
+                    truncation_prefix = prefix
+                
+                lines += 1
+                if entry.is_dir():
+                    rec(entry, prefix + SPACE, current_depth + 1, patterns)
+                continue
 
             is_last = i == len(entries) - 1 and truncated == 0
             connector = LAST if is_last else BRANCH
@@ -166,13 +163,22 @@ def draw_tree(
                 rec(entry, prefix + (SPACE if is_last else VERT),  current_depth + 1, patterns)
 
         # Show truncation message if items were hidden
-        if truncated > 0 and not stop_writing:
-            # truncation line is always last among displayed items
-            output_buffer.write(prefix + LAST + f"... and {truncated} more items")
-            lines += 1
+        if truncated > 0:
+            if max_lines is not None and lines >= max_lines:
+                if truncation_prefix is None:
+                    truncation_prefix = prefix
+                lines += 1
+            else:
+                # truncation line is always last among displayed items
+                output_buffer.write(prefix + LAST + f"... and {truncated} more items")
+                lines += 1
 
     if root.is_dir():
         rec(root, "", 0, [])
+
+    if truncation_prefix is not None:
+        remaining = lines - max_lines
+        output_buffer.write(truncation_prefix + LAST + f"... and {remaining} more lines")
 
 
 def print_summary(
