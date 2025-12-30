@@ -22,6 +22,7 @@ def get_default_config() -> Dict[str, Any]:
     """
     return {
         "max_items": 20,
+        "max_lines": 40,
         "max_depth": None,
         "gitignore_depth": None,
         "exclude_depth": None,
@@ -44,10 +45,12 @@ def get_default_config() -> Dict[str, Any]:
         "interactive": False,
 
         # toggles
-        "emoji": False, 
+        "emoji": False,
+        "no_color": False,
         "no_gitignore": False,
         "no_files": False,
         "no_limit": False,
+        "no_max_lines": False,
         "no_contents": False,
         "override_files": True,
         "summary": False,
@@ -89,6 +92,16 @@ def validate_config(logger: Logger, config: Dict[str, Any]) -> None:
                     "key 'max_items' must be between 1 and 10000, got {value} in config.json")
                 sys.exit(1)
 
+        elif key == "max_lines":
+            if not isinstance(value, int):
+                logger.log(Logger.ERROR, 
+                    f"key 'max_lines' must be int, got {type(value).__name__} in config.json")
+                sys.exit(1)
+            if value < 1:
+                logger.log(Logger.ERROR, 
+                    f"key 'max_lines' must be positive, got {value} in config.json")
+                sys.exit(1)
+
         elif key in optional_int_keys:
             if not isinstance(value, int):
                 logger.log(Logger.ERROR, 
@@ -99,9 +112,9 @@ def validate_config(logger: Logger, config: Dict[str, Any]) -> None:
                     f"Error: '{key}' cannot be negative, got {value} in config.json")
                 sys.exit(1)
 
-        elif key in ["emoji", "show_all", "no_gitignore", "no_files", "no_limit", "summary"]:
+        elif key in ["emoji", "show_all", "no_color", "no_gitignore", "no_files", "no_limit", "summary"]:
             if not isinstance(value, bool):
-                logger.log(Logger.ERROR, 
+                logger.log(Logger.ERROR,
                     f"Error: '{key}' must be boolean (true/false), got {type(value).__name__} in config.json")
                 sys.exit(1)
         else:

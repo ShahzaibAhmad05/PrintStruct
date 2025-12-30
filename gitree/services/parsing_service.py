@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 from ..utilities.utils import max_items_int
+from ..utilities.utils import max_lines_int
 
 
 def parse_args() -> argparse.Namespace:
@@ -11,10 +12,30 @@ def parse_args() -> argparse.Namespace:
         argparse.Namespace: Parsed command-line arguments containing all configuration options
     """
     ap = argparse.ArgumentParser(
-        description="Print a directory tree (respects .gitignore)."
+        description="Print a directory tree (respects .gitignore).",
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog="""
+    Examples:
+    gitree
+        Print tree of current directory
+
+    gitree src --max-depth 2
+        Print tree for 'src' directory up to depth 2
+
+    gitree . --exclude *.pyc __pycache__
+        Exclude compiled Python files
+
+    gitree --json tree.json --no-contents
+        Export tree as JSON without file contents
+
+    gitree --zip project.zip src/
+        Create a zip archive from src directory
+    """
     )
 
-    # positional arg that should keep defaults
+    # -------------------------
+    # Positional arguments
+    # -------------------------
     ap.add_argument(
         "paths",
         nargs="*",
@@ -22,55 +43,42 @@ def parse_args() -> argparse.Namespace:
         help="Root paths (supports multiple directories and file patterns)",
     )
 
-    # Config-mergeable options
-    # (SUPPRESS means: absent unless user explicitly sets them)
-    ap.add_argument(
-        "--max-depth",
-        type=int,
-        default=argparse.SUPPRESS,
-        help="Maximum depth to traverse",
+    # =========================
+    # BASIC / META CLI FLAGS
+    # =========================
+    basic = ap.add_argument_group("Basic CLI flags")
+
+    basic.add_argument(
+        "-v", "--version",
+        action="store_true",
+        help="Display the version of the tool",
+    )
+    basic.add_argument(
+        "--init-config",
+        action="store_true",
+        help="Create a default config.json file in the current directory",
     )
     ap.add_argument(
-        "--hidden-items",
+        "--max-lines",
+        type=max_lines_int,
+        default=argparse.SUPPRESS,
+        help="Limit lines shown in the tree output",
+    )
+    ap.add_argument(
+        "--no-max-lines",
         action="store_true",
         default=argparse.SUPPRESS,
-        help="Show hidden files and directories",
+        help="Disable max lines limit",
     )
-    ap.add_argument(
-        "--exclude",
-        nargs="*",
-        default=argparse.SUPPRESS,
-        help="Patterns of files to exclude (e.g. *.pyc, __pycache__)",
-    )
-    ap.add_argument(
-        "--exclude-depth",
-        type=int,
-        default=argparse.SUPPRESS,
-        help="Limit depth for --exclude patterns",
-    )
-    ap.add_argument(
-        "--gitignore-depth",
-        type=int,
-        default=argparse.SUPPRESS,
-        help="Limit depth for .gitignore processing",
-    )
-    ap.add_argument(
-        "--no-gitignore",
+    basic.add_argument(
+        "--config-user",
         action="store_true",
-        default=argparse.SUPPRESS,
-        help="Ignore .gitignore rules",
+        help="Open config.json in the default editor",
     )
-    ap.add_argument(
-        "--max-items",
-        type=max_items_int,
-        default=argparse.SUPPRESS,
-        help="Limit items shown per directory (use --no-limit for unlimited)",
-    )
-    ap.add_argument(
-        "--overrride-files",
+    basic.add_argument(
+        "--no-config",
         action="store_true",
-        default=argparse.SUPPRESS,
-        help="Override files even if they exist (for file outputs)"
+        help="Ignore config.json and use hardcoded defaults",
     )
     ap.add_argument(
         "-z", "--zip",
@@ -162,43 +170,168 @@ def parse_args() -> argparse.Namespace:
         help="Enable verbose output for debugging",
     )
 
-    # Control / meta flags (not config-backed)
-    ap.add_argument(
-        "-v", "--version",
-        action="store_true",
-        help="Display the version of the tool",
+    # =========================
+    # INPUT / OUTPUT FLAGS
+    # =========================
+    io = ap.add_argument_group("Input / Output flags")
+
+    io.add_argument(
+        "-z", "--zip",
+        default=argparse.SUPPRESS,
+        help="Create a zip file containing files under path (respects .gitignore)",
     )
-    ap.add_argument(
-        "--init-config",
-        action="store_true",
-        help="Create a default config.json file in the current directory",
+    io.add_argument(
+        "--json",
+        metavar="FILE",
+        default=argparse.SUPPRESS,
+        help="Export tree as JSON to specified file",
     )
-    ap.add_argument(
-        "--config-user",
-        action="store_true",
-        help="Open config.json in the default editor",
+    io.add_argument(
+        "--txt",
+        metavar="FILE",
+        default=argparse.SUPPRESS,
+        help="Export tree as text to specified file",
     )
-    ap.add_argument(
-        "--no-config",
-        action="store_true",
-        help="Ignore config.json and use hardcoded defaults",
+    io.add_argument(
+        "--md",
+        metavar="FILE",
+        default=argparse.SUPPRESS,
+        help="Export tree as Markdown to specified file",
     )
-    ap.add_argument(
+    io.add_argument(
+        "-o", "--output",
+        default=argparse.SUPPRESS,
+        help="Save tree structure to file",
+    )
+    io.add_argument(
+        "-c", "--copy",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Copy tree output to clipboard",
+    )
+    io.add_argument(
+        "--no-contents",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Don't include file contents when exporting",
+    )
+    io.add_argument(
         "--no-contents-for",
         nargs="+",
         default=[],
         metavar="PATH",
-        help="Do not save file contents for specific files or directories"
+        help="Do not save file contents for specific files or directories",
     )
-    ap.add_argument(
+    io.add_argument(
+        "--overrride-files",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Override files even if they exist (for file outputs)",
+    )
+
+    # =========================
+    # LISTING / TREE FLAGS
+    # =========================
+    listing = ap.add_argument_group("Listing flags")
+
+    listing.add_argument(
+        "--max-depth",
+        type=int,
+        default=argparse.SUPPRESS,
+        help="Maximum depth to traverse",
+    )
+    listing.add_argument(
+        "--hidden-items",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Show hidden files and directories",
+    )
+    listing.add_argument(
+        "--exclude",
+        nargs="*",
+        default=argparse.SUPPRESS,
+        help="Patterns of files to exclude (e.g. *.pyc, __pycache__)",
+    )
+    listing.add_argument(
+        "--exclude-depth",
+        type=int,
+        default=argparse.SUPPRESS,
+        help="Limit depth for --exclude patterns",
+    )
+    listing.add_argument(
+        "--gitignore-depth",
+        type=int,
+        default=argparse.SUPPRESS,
+        help="Limit depth for .gitignore processing",
+    )
+    listing.add_argument(
+        "--no-gitignore",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Ignore .gitignore rules",
+    )
+    listing.add_argument(
+        "--max-items",
+        type=max_items_int,
+        default=argparse.SUPPRESS,
+        help="Limit items shown per directory (use --no-limit for unlimited)",
+    )
+    listing.add_argument(
+        "--no-limit",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Show all items regardless of count",
+    )
+    listing.add_argument(
+        "--no-files",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Hide files from the tree (only show directories)",
+    )
+    listing.add_argument(
+        "-e", "--emoji",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Show emojis in tree output",
+    )
+    listing.add_argument(
+        "-s", "--summary",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Print a summary of the number of files and folders at each level",
+    )
+    listing.add_argument(
+        "-i", "--interactive",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Interactive mode: select files to include",
+    )
+    listing.add_argument(
+        "--include",
+        nargs="*",
+        default=argparse.SUPPRESS,
+        help="Patterns of files to include (e.g. *.py)",
+    )
+    listing.add_argument(
+        "--include-file-type", "--include-file-types",
+        nargs="*",
+        default=argparse.SUPPRESS,
+        help="Include files of specific types (e.g. png jpg)",
+    )
+    listing.add_argument(
         "--files-first",
         action="store_true",
         default=False,
         help="Print files before directories in the tree output",
     )
+    ap.add_argument(
+        "--no-color",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Disable colorized output",
+    )
 
     return ap.parse_args()
-
 
 def correct_args(args: argparse.Namespace) -> argparse.Namespace:
     """

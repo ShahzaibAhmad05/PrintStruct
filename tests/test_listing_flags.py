@@ -1,40 +1,8 @@
-import subprocess
-import sys
-import tempfile
-from pathlib import Path
-import unittest
 from gitree.constants.constant import FILE_EMOJI, EMPTY_DIR_EMOJI, NORMAL_DIR_EMOJI
+from tests.base_setup import BaseCLISetup
 
 
-class TestListingFlags(unittest.TestCase):
-    
-    def setUp(self):
-        # Create a temp project directory for each test
-        self._tmpdir = tempfile.TemporaryDirectory()
-        self.root = Path(self._tmpdir.name)
-
-        # Base project structure
-        (self.root / "file.txt").write_text("hello")
-
-
-    def tearDown(self):
-        # Cleanup temp directory
-        self._tmpdir.cleanup()
-
-
-    def _run_cli(self, *args):
-        """
-        Helper to run the CLI consistently.
-        - args: extra CLI arguments, e.g. "--max-depth 1"
-        """
-        return subprocess.run(
-            [sys.executable, "-m", "gitree.main", *args],
-            cwd=self.root,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-        )
-
+class TestListingFlags(BaseCLISetup):
 
     @staticmethod
     def __build_name_with_emoji(file_name: str, emoji: str):
@@ -46,7 +14,7 @@ class TestListingFlags(unittest.TestCase):
         (self.root / "empty_folder").mkdir()
         (self.root / "folder").mkdir()
         (self.root / "folder" / "nested.txt").write_text('foo')
-        result = self._run_cli("--emoji")
+        result = self._run_cli("--emoji", "--no-color")
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         self.assertTrue(result.stdout.strip())
@@ -91,7 +59,7 @@ class TestListingFlags(unittest.TestCase):
         for i in range(30):  # default limit is 20
             (self.root / "folder" / f"file{i}.txt").write_text("data")
 
-        result = self._run_cli("--no-limit")
+        result = self._run_cli("--no-limit", "--no-max-lines")
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         self.assertTrue(result.stdout.strip())
@@ -173,6 +141,36 @@ class TestListingFlags(unittest.TestCase):
         (self.root / "script.py").write_text("python")
         (self.root / "error.log").write_text("log")
         (self.root / "data.json").write_text("{}")
+        
+
+    def test_entry_point_no_color(self):
+        # Create additional structure
+        (self.root / "folder").mkdir()
+        (self.root / ".hidden_file").write_text("hidden")
+
+        # Test with color (default) - should contain ANSI color codes
+        result_with_color = self._run_cli("--hidden-items")
+
+        self.assertEqual(result_with_color.returncode, 0, msg=result_with_color.stderr)
+        self.assertTrue(result_with_color.stdout.strip())
+        # Check that ANSI escape sequences are present (color codes start with \x1b[)
+        self.assertIn("\x1b[", result_with_color.stdout, msg="Expected ANSI color codes in output")
+
+        # Test with --no-color flag - should NOT contain ANSI color codes
+        result_no_color = self._run_cli("--hidden-items", "--no-color")
+
+        self.assertEqual(result_no_color.returncode, 0, msg=result_no_color.stderr)
+        self.assertTrue(result_no_color.stdout.strip())
+        self.assertNotIn("\x1b[", result_no_color.stdout, msg="Expected no ANSI color codes with --no-color flag")
+        
+
+    def test_entry_point_include(self):
+        # Create a .gitignore to test that --include overrides it
+        (self.root / ".gitignore").write_text("*.py\n")
+        (self.root / "script.py").write_text("python")
+        (self.root / "data.json").write_text("{}")
+        (self.root / "folder").mkdir()
+        (self.root / "folder" / "test.py").write_text("test")
 
         # Without --include, .py files should be ignored
         result_without = self._run_cli()
@@ -264,3 +262,63 @@ class TestListingFlags(unittest.TestCase):
         # Warning should appear in stderr
         self.assertIn("No files found matching --include-file-types", result.stderr)
         self.assertIn("rs", result.stderr)
+        # self.assertNotIn("test.py", result_without.stdout)
+
+        # With --include *.py, .py files should be force-included despite gitignore
+        result = self._run_cli("--include", "*.py")
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertTrue(result.stdout.strip())
+        # Should force-include .py files (overriding gitignore)
+        self.assertIn("script.py", result.stdout)
+        self.assertIn("test.py", result.stdout)
+        # Should still show other files that pass normal filters
+        self.assertIn("file.txt", result.stdout)
+        self.assertIn("data.json", result.stdout)
+        self.assertIn("folder", result.stdout)
+
+
+    def test_entry_point_exclude(self):
+        # Create multiple file types
+        (self.root / "script.py").write_text("python")
+        (self.root / "data.json").write_text("{}")
+        (self.root / "readme.md").write_text("docs")
+        (self.root / "folder").mkdir()
+        (self.root / "folder" / "test.py").write_text("test")
+
+        # Test --exclude to hide .py files
+        result = self._run_cli("--exclude", "*.py")
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertTrue(result.stdout.strip())
+        # Should show non-.py files
+        self.assertIn("file.txt", result.stdout)
+        self.assertIn("data.json", result.stdout)
+        self.assertIn("readme.md", result.stdout)
+        self.assertIn("folder", result.stdout)
+        # Should NOT show .py files
+        self.assertNotIn("script.py", result.stdout)
+        self.assertNotIn("test.py", result.stdout)
+
+
+    def test_entry_point_exclude_multiple_patterns(self):
+        # Create various files
+        (self.root / "file.log").write_text("log")
+        (self.root / "cache.tmp").write_text("temp")
+        (self.root / "data.json").write_text("{}")
+        (self.root / "folder").mkdir()
+        (self.root / "folder" / "debug.log").write_text("debug")
+
+        # Test --exclude with multiple patterns
+        result = self._run_cli("--exclude", "*.log", "*.tmp")
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertTrue(result.stdout.strip())
+        # Should show files not matching exclude patterns
+        self.assertIn("file.txt", result.stdout)
+        self.assertIn("data.json", result.stdout)
+        self.assertIn("folder", result.stdout)
+        # Should NOT show excluded files
+        self.assertNotIn("file.log", result.stdout)
+        self.assertNotIn("cache.tmp", result.stdout)
+        self.assertNotIn("debug.log", result.stdout)
