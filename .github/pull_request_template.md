@@ -1,4 +1,4 @@
-**Fixes #ISSUE_NUMBER_HERE**
+Fixes #ISSUE_NUMBER_HERE
 
 Additionally, at the time of submission of this PR:
 
