@@ -126,7 +126,8 @@ class OutputBuffer:
         """
         Flush the output buffer.
         """
-        self.logger.flush()
+        if self.logger.get_logs():
+            self.logger.flush()
 
 
     def get_value(self) -> List[str]:
@@ -138,6 +139,7 @@ class OutputBuffer:
         """
         return "\n".join(self.logger.get_logs())
     
+
     def clear(self) -> None:   
         """
         Clear the output buffer.
