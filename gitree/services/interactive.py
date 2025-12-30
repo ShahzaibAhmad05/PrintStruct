@@ -1,16 +1,27 @@
-import questionary
 from pathlib import Path
-from typing import List, Set
+from typing import List, Set, Dict
+from collections import defaultdict
+
+from prompt_toolkit.application import Application
+from prompt_toolkit.layout import Layout
+from prompt_toolkit.layout.controls import FormattedTextControl
+from prompt_toolkit.layout.containers import Window
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.formatted_text import StyleAndTextTuples
+from prompt_toolkit.styles import Style
+
 from ..utilities.gitignore import GitIgnoreMatcher
 from ..utilities.utils import matches_file_type
 from ..utilities.logger import Logger, OutputBuffer
 from ..services.list_enteries import list_entries
-import pathspec, argparse
+import pathspec
+import argparse
+
 
 def select_files(
     *,
     root: Path,
-    output_buffer: OutputBuffer,   
+    output_buffer: OutputBuffer,
     logger: Logger,
     respect_gitignore: bool = True,
     gitignore_depth: int = None,
@@ -20,63 +31,31 @@ def select_files(
     include_file_types: List[str] = None,
     files_first: bool = False,
 ) -> Set[str]:
-    """
-    Present an interactive prompt for users to select files from a directory tree.
-
-    Args:
-        root (Path): Root directory path to scan
-        output_buffer (OutputBuffer): Buffer to write output to
-        logger (Logger): Logger instance for logging
-        respect_gitignore (bool): If True, respect .gitignore rules. Defaults to True
-        gitignore_depth (int): Maximum depth to search for .gitignore files
-        extra_excludes (List[str]): Additional exclude patterns
-        include_patterns (List[str]): Patterns for files to include
-        include_file_types (List[str]): File types (extensions) to include
-
-    Returns:
-        Set[str]: Set of selected absolute file paths
-    """
-    files_to_select = []
-
-    # We need to flatten the tree to a list for the prompt
-    # Reusing recursion logic similar to print_summary but collecting paths
 
     gi = GitIgnoreMatcher(root, enabled=respect_gitignore, gitignore_depth=gitignore_depth)
-    extra_excludes = extra_excludes or []
+    extra_excludes = (extra_excludes or []) + (exclude_patterns or [])
 
-    # Compile exclude matcher from extra_excludes
-    exclude_spec = None
-    if extra_excludes:
-        exclude_spec = pathspec.PathSpec.from_lines("gitwildmatch", extra_excludes)
-
-    # Compile include matcher
     include_spec = None
     if include_patterns:
         include_spec = pathspec.PathSpec.from_lines("gitwildmatch", include_patterns)
 
-    def collect_files(dirpath: Path, patterns: List[str]):
-        """
-        Recursively collect files from directory, applying gitignore and filter rules.
+    tree: List[dict] = []
+    folder_to_files: Dict[int, List[int]] = defaultdict(list)
+    folder_to_subdirs: Dict[int, List[int]] = defaultdict(list)
 
-        Args:
-            dirpath (Path): Directory path to scan
-            patterns (List[str]): List of gitignore patterns to apply
-
-        Returns:
-            None: Populates the files_to_select list in the parent scope
-        """
+    def collect(dirpath: Path, patterns: List[str], depth: int):
         if respect_gitignore and gi.within_depth(dirpath):
             gi_path = dirpath / ".gitignore"
             if gi_path.is_file():
                 rel_dir = dirpath.relative_to(root).as_posix()
-                prefix_path = "" if rel_dir == "." else rel_dir + "/"
+                prefix = "" if rel_dir == "." else rel_dir + "/"
                 for line in gi_path.read_text(encoding="utf-8", errors="ignore").splitlines():
                     line = line.strip()
                     if not line or line.startswith("#"):
                         continue
                     neg = line.startswith("!")
                     pat = line[1:] if neg else line
-                    pat = prefix_path + pat.lstrip("/")
+                    pat = prefix + pat.lstrip("/")
                     patterns = patterns + [("!" + pat) if neg else pat]
 
         spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
@@ -90,54 +69,138 @@ def select_files(
             spec=spec,
             show_all=False,
             extra_excludes=extra_excludes,
-            max_items=None, # Show all potential files for selection
+            max_items=None,
             exclude_depth=None,
             no_files=False,
         )
 
+        folder_index = len(tree)
+        rel_dir = dirpath.relative_to(root).as_posix() or "(root)"
+
+        tree.append({
+            "type": "dir",
+            "path": rel_dir,
+            "depth": depth,
+            "checked": False,
+        })
+
         for entry in entries:
             if entry.is_dir():
-                collect_files(entry, patterns)
+                child_index = len(tree)
+                collect(entry, patterns, depth + 1)
+                folder_to_subdirs[folder_index].append(child_index)
             else:
-                # Store relative path for display
                 rel_path = entry.relative_to(root).as_posix()
 
-                # Filter based on include patterns or file types (if any provided)
                 if include_spec or include_file_types:
-                    matches_include = False
-
-                    # Check if matches include patterns
+                    ok = False
                     if include_spec and include_spec.match_file(rel_path):
-                        matches_include = True
-
-                    # Check if matches file types
-                    if not matches_include and include_file_types and matches_file_type(entry, include_file_types):
-                        matches_include = True
-
-                    # Only include if it matches at least one criterion
-                    if not matches_include:
+                        ok = True
+                    if not ok and include_file_types:
+                        ok = matches_file_type(entry, include_file_types)
+                    if not ok:
                         continue
 
-                files_to_select.append(questionary.Choice(rel_path, checked=True))
+                file_index = len(tree)
+                tree.append({
+                    "type": "file",
+                    "path": rel_path,
+                    "depth": depth + 1,
+                    "checked": False,
+                })
+                folder_to_files[folder_index].append(file_index)
 
-    collect_files(root, [])
+    collect(root, [], 0)
 
-    if not files_to_select:
-        logger.log(Logger.WARNING, "No files found to select (check your include/exclude patterns).")
+    if not tree:
         return set()
 
-    selected_rels = questionary.checkbox(
-    "📂 Select files to include:",
-    choices=files_to_select,
-    instruction="Use ↑ ↓ to navigate • Space to toggle • Enter to confirm"
-).ask()
+    cursor = 0
+
+    def toggle_dir(index: int, state: bool):
+        tree[index]["checked"] = state
+
+        for f in folder_to_files.get(index, []):
+            tree[f]["checked"] = state
+
+        for d in folder_to_subdirs.get(index, []):
+            toggle_dir(d, state)
+
+    def render() -> StyleAndTextTuples:
+        lines: StyleAndTextTuples = []
+
+        for i, item in enumerate(tree):
+            indent = "  " * item["depth"]
+
+            if item["checked"]:
+                star = ("class:star", "[★ ] ")
+            else:
+                star = ("", "[ ] ")
+
+            label = item["path"].split("/")[-1]
+            if item["type"] == "dir":
+                label += "/"
+
+            cursor_style = "class:cursor" if i == cursor else ""
+
+            lines.append((cursor_style, indent))
+            lines.append(star)
+            lines.append((cursor_style, label + "\n"))
+
+        return lines
+
+
+    kb = KeyBindings()
+
+    @kb.add("up")
+    def _(e):
+        nonlocal cursor
+        cursor = max(0, cursor - 1)
+
+    @kb.add("down")
+    def _(e):
+        nonlocal cursor
+        cursor = min(len(tree) - 1, cursor + 1)
+
+    @kb.add(" ")
+    def _(e):
+        item = tree[cursor]
+        new_state = not item["checked"]
+
+        if item["type"] == "dir":
+            toggle_dir(cursor, new_state)
+        else:
+            item["checked"] = new_state
+
+    @kb.add("enter")
+    def _(e):
+        e.app.exit()
+
+    style = Style.from_dict({
+        "star": "fg:green",
+        "cursor": "reverse",
+    })
+
+    @kb.add("c-c")
+    def _(e):
+        e.app.exit()
 
 
 
-    if selected_rels is None: # Cancelled
-        return set()
+    app = Application(
+        layout=Layout(Window(FormattedTextControl(render))),
+        key_bindings=kb,
+        style=style,
+        full_screen=True,
+    )
 
-    return {str(root / rel) for rel in selected_rels}
+    app.run()
+
+    return {
+        str(root / item["path"])
+        for item in tree
+        if item["type"] == "file" and item["checked"]
+    }
 
 
 def get_interactive_file_selection(
@@ -147,25 +210,7 @@ def get_interactive_file_selection(
     logger: Logger,
     args: argparse.Namespace,
 ) -> dict:
-    """
-    Get interactive file selection for multiple root directories.
 
-    Args:
-        roots (List[Path]): List of root directory paths
-        output_buffer (OutputBuffer): Buffer to write output to
-        logger (Logger): Logger instance for logging
-        respect_gitignore (bool): If True, respect .gitignore rules. Defaults to True
-        gitignore_depth (int): Maximum depth to search for .gitignore files
-        extra_excludes (List[str]): Additional exclude patterns
-        include_patterns (List[str]): Patterns for files to include
-        include_file_types (List[str]): File types (extensions) to include
-
-    Returns:
-        dict: Mapping of root paths to sets of selected absolute file paths
-    """
-    # We need to filter roots if user cancels selection or selects nothing?
-    # Current behavior in services: if not selected_files: continue.
-    # So we should probably keep that logic.
     selected_files_map = {}
 
     for root in roots:
@@ -176,8 +221,9 @@ def get_interactive_file_selection(
             respect_gitignore=not args.no_gitignore,
             gitignore_depth=args.gitignore_depth,
             extra_excludes=args.exclude,
+            exclude_patterns=args.exclude,
             include_patterns=args.include,
-            include_file_types=args.include_file_types
+            include_file_types=args.include_file_types,
         )
         if selected:
             selected_files_map[root] = selected
