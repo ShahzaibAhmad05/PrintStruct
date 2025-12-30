@@ -133,7 +133,7 @@ def select_files(
             indent = "  " * item["depth"]
 
             if item["checked"]:
-                star = ("class:star", "[★ ] ")
+                star = ("class:star", "[✓ ] ")
             else:
                 star = ("", "[ ] ")
 

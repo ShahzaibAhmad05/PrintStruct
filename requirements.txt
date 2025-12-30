@@ -1,4 +1,4 @@
 -e .
 pathspec
 pyperclip
-questionary
+prompt_toolkit>=3.0
