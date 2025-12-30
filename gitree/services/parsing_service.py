@@ -58,18 +58,6 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Create a default config.json file in the current directory",
     )
-    ap.add_argument(
-        "--max-lines",
-        type=max_lines_int,
-        default=argparse.SUPPRESS,
-        help="Limit lines shown in the tree output",
-    )
-    ap.add_argument(
-        "--no-max-lines",
-        action="store_true",
-        default=argparse.SUPPRESS,
-        help="Disable max lines limit",
-    )
     basic.add_argument(
         "--config-user",
         action="store_true",
@@ -79,89 +67,6 @@ def parse_args() -> argparse.Namespace:
         "--no-config",
         action="store_true",
         help="Ignore config.json and use hardcoded defaults",
-    )
-    ap.add_argument(
-        "-z", "--zip",
-        default=argparse.SUPPRESS,
-        help="Create a zip file containing files under path (respects .gitignore)",
-    )
-    ap.add_argument(
-        "--json",
-        metavar="FILE",
-        default=argparse.SUPPRESS,
-        help="Export tree as JSON to specified file",
-    )
-    ap.add_argument(
-        "--txt",
-        metavar="FILE",
-        default=argparse.SUPPRESS,
-        help="Export tree as text to specified file",
-    )
-    ap.add_argument(
-        "--md",
-        metavar="FILE",
-        default=argparse.SUPPRESS,
-        help="Export tree as Markdown to specified file",
-    )
-    ap.add_argument(
-        "-o", "--output",
-        default=argparse.SUPPRESS,
-        help="Save tree structure to file",
-    )
-    ap.add_argument(
-        "-c", "--copy",
-        action="store_true",
-        default=argparse.SUPPRESS,
-        help="Copy tree output to clipboard",
-    )
-    ap.add_argument(
-        "-e", "--emoji",
-        action="store_true",
-        default=argparse.SUPPRESS,
-        help="Show emojis in tree output, default is false",
-    )
-    ap.add_argument(
-        "-s", "--summary",
-        action="store_true",
-        default=argparse.SUPPRESS,
-        help="Print a summary of the number of files and folders at each level",
-    )
-    ap.add_argument(
-        "-i", "--interactive",
-        action="store_true",
-        default=argparse.SUPPRESS,
-        help="Interactive mode: select files to include",
-    )
-    ap.add_argument(
-        "--include",
-        nargs="*",
-        default=argparse.SUPPRESS,
-        help="Patterns of files to include (e.g. *.py)",
-    )
-    ap.add_argument(
-        "--include-file-types", "--include-file-type",
-        nargs="*",
-        default=argparse.SUPPRESS,
-        dest="include_file_types",
-        help="Include files of multiple types, or a specific type (e.g. png jpg)",
-    )
-    ap.add_argument(
-        "--no-limit",
-        action="store_true",
-        default=argparse.SUPPRESS,
-        help="Show all items regardless of count",
-    )
-    ap.add_argument(
-        "--no-files",
-        action="store_true",
-        default=argparse.SUPPRESS,
-        help="Hide files from the tree (only show directories)",
-    )
-    ap.add_argument(
-        "--no-contents",
-        action="store_true",
-        default=argparse.SUPPRESS,
-        help="Don't include file contents when exporting",
     )
     ap.add_argument(
         "--verbose",
@@ -193,23 +98,6 @@ def parse_args() -> argparse.Namespace:
         help="Export tree as text to specified file",
     )
     io.add_argument(
-        "--md",
-        metavar="FILE",
-        default=argparse.SUPPRESS,
-        help="Export tree as Markdown to specified file",
-    )
-    io.add_argument(
-        "-o", "--output",
-        default=argparse.SUPPRESS,
-        help="Save tree structure to file",
-    )
-    io.add_argument(
-        "-c", "--copy",
-        action="store_true",
-        default=argparse.SUPPRESS,
-        help="Copy tree output to clipboard",
-    )
-    io.add_argument(
         "--no-contents",
         action="store_true",
         default=argparse.SUPPRESS,
@@ -228,6 +116,17 @@ def parse_args() -> argparse.Namespace:
         default=argparse.SUPPRESS,
         help="Override files even if they exist (for file outputs)",
     )
+    ap.add_argument(
+        "--md",
+        metavar="FILE",
+        default=argparse.SUPPRESS,
+        help="Export tree as Markdown to specified file",
+    )
+    ap.add_argument(
+        "-o", "--output",
+        default=argparse.SUPPRESS,
+        help="Save tree structure to file",
+    )
 
     # =========================
     # LISTING / TREE FLAGS
@@ -239,6 +138,18 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=argparse.SUPPRESS,
         help="Maximum depth to traverse",
+    )
+    ap.add_argument(
+        "--max-lines",
+        type=max_lines_int,
+        default=argparse.SUPPRESS,
+        help="Limit lines shown in the tree output",
+    )
+    ap.add_argument(
+        "--no-max-lines",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Disable max lines limit",
     )
     listing.add_argument(
         "--hidden-items",
@@ -288,35 +199,42 @@ def parse_args() -> argparse.Namespace:
         default=argparse.SUPPRESS,
         help="Hide files from the tree (only show directories)",
     )
-    listing.add_argument(
+    ap.add_argument(
+        "-c", "--copy",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Copy tree output to clipboard",
+    )
+    ap.add_argument(
         "-e", "--emoji",
         action="store_true",
         default=argparse.SUPPRESS,
-        help="Show emojis in tree output",
+        help="Show emojis in tree output, default is false",
+    )
+    ap.add_argument(
+        "-i", "--interactive",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Interactive mode: select files to include",
+    )
+    ap.add_argument(
+        "--include",
+        nargs="*",
+        default=argparse.SUPPRESS,
+        help="Patterns of files to include (e.g. *.py)",
+    )
+    ap.add_argument(
+        "--include-file-types", "--include-file-type",
+        nargs="*",
+        default=argparse.SUPPRESS,
+        dest="include_file_types",
+        help="Include files of multiple types, or a specific type (e.g. png jpg)",
     )
     listing.add_argument(
         "-s", "--summary",
         action="store_true",
         default=argparse.SUPPRESS,
         help="Print a summary of the number of files and folders at each level",
-    )
-    listing.add_argument(
-        "-i", "--interactive",
-        action="store_true",
-        default=argparse.SUPPRESS,
-        help="Interactive mode: select files to include",
-    )
-    listing.add_argument(
-        "--include",
-        nargs="*",
-        default=argparse.SUPPRESS,
-        help="Patterns of files to include (e.g. *.py)",
-    )
-    listing.add_argument(
-        "--include-file-type", "--include-file-types",
-        nargs="*",
-        default=argparse.SUPPRESS,
-        help="Include files of specific types (e.g. png jpg)",
     )
     listing.add_argument(
         "--files-first",
