@@ -4,15 +4,20 @@ on:
   pull_request_target:
     types: [opened]
 
+# Needed for commenting on PRs reliably
 permissions:
-  issues: write  # required to comment on PRs (PRs are issues for comments)
+  issues: write
+  pull-requests: write
+  contents: read
 
 jobs:
   comment_review_notice:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/github-script@v7
+      - name: Comment review notice (non-maintainers only)
+        uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { owner, repo } = context.repo;
 
@@ -20,20 +25,45 @@ jobs:
             const pr_number = pr.number;
             const pr_author = pr.user.login;
 
-            // Maintainers list
+            // Maintainers list (case-insensitive)
             const maintainers = [
               "ShahzaibAhmad05",
               "d-khalid",
             ].map(u => u.toLowerCase());
 
             const isMaintainer = maintainers.includes(pr_author.toLowerCase());
+            if (isMaintainer) {
+              core.info(`Skipping: ${pr_author} is a maintainer.`);
+              return;
+            }
 
-            // Only comment if PR author is NOT a maintainer/admin
-            if (isMaintainer) return;
+            const notice =
+              "Thank you for the pull request! ✅\n\n" +
+              "A maintainer will review this soon. Please be patient while we take a look. 🙌";
+
+            // Avoid duplicate notices from the bot
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: pr_number,
+              per_page: 100,
+            });
+
+            const alreadyCommented = comments.some(c =>
+              c.user?.type === "Bot" &&
+              (c.body || "").includes("Thank you for the pull request! ✅")
+            );
+
+            if (alreadyCommented) {
+              core.info("Notice already posted. Skipping duplicate.");
+              return;
+            }
 
             await github.rest.issues.createComment({
               owner,
               repo,
               issue_number: pr_number,
-              body: "Thank you for the pull request! ✅\n\nA maintainer will review this soon. Please be patient while we take a look. 🙌",
+              body: notice,
             });
+
+            core.info("Posted review notice comment.");
