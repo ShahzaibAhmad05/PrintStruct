@@ -9,6 +9,7 @@ from ..constants.constant import (BRANCH, LAST, SPACE, VERT,
                                   FILE_EMOJI, EMPTY_DIR_EMOJI,
                                   NORMAL_DIR_EMOJI)
 from ..utilities.colors import colorize_text
+from .tree_formatting_service import write_outputs, build_tree_data, format_markdown_tree, format_json, format_text_tree
 import pathspec
 from collections import defaultdict
 
@@ -355,17 +356,83 @@ def run_tree_mode(
 
     # Write to output file if requested
     if args.output is not None:
-        content = output_buffer.get_value()
+        # If format is tree, write whatever was drawn to the buffer.
+        if args.format == "tree":
+            content = output_buffer.get_value()
 
-        if args.output.endswith(".md"):
-            content = f"```\n{content}```\n"
+        else:
+            # For json/md we must build structured tree data (not the unicode rendering)
+            include_contents = not args.no_contents
+
+            # NOTE: keeps previous behavior: export uses last processed root
+            tree_data = build_tree_data(
+                root=root,
+                output_buffer=output_buffer,
+                logger=logger,
+                depth=args.max_depth,
+                show_all=args.hidden_items,
+                extra_excludes=args.exclude,
+                respect_gitignore=not args.no_gitignore,
+                gitignore_depth=args.gitignore_depth,
+                max_items=args.max_items,
+                max_lines=args.max_lines,
+                exclude_depth=args.exclude_depth,
+                no_files=args.no_files,
+                whitelist=selected_files,
+                include_patterns=args.include,
+                include_file_types=args.include_file_types,
+                include_contents=include_contents,
+                no_contents_for=args.no_contents_for
+            )
+
+            if args.format:
+                if args.format == "md":
+                    content = format_markdown_tree(tree_data, include_contents=True)
+                elif args.format == "txt":
+                    content = format_text_tree(tree_data, include_contents=True)
+                elif args.format == "json":
+                    content = format_json(tree_data)
+            else:
+                # fallback safety
+                content = output_buffer.get_value()
 
         with open(args.output, "w", encoding="utf-8") as f:
             f.write(content)
 
-    # Copy to clipboard if requested
+
     if args.copy:
-        if not copy_to_clipboard(output_buffer.get_value(), logger=logger):
+        # Copy the formatted output, not always the unicode tree
+        content_to_copy = output_buffer.get_value()
+        if args.format in ("json", "md"):
+
+            include_contents = not args.no_contents
+            tree_data = build_tree_data(
+                root=root,
+                output_buffer=output_buffer,
+                logger=logger,
+                depth=args.max_depth,
+                show_all=args.hidden_items,
+                extra_excludes=args.exclude,
+                respect_gitignore=not args.no_gitignore,
+                gitignore_depth=args.gitignore_depth,
+                max_items=args.max_items,
+                max_lines=args.max_lines,
+                exclude_depth=args.exclude_depth,
+                no_files=args.no_files,
+                whitelist=selected_files,
+                include_patterns=args.include,
+                include_file_types=args.include_file_types,
+                include_contents=include_contents,
+                no_contents_for=args.no_contents_for
+            )
+
+            if args.format == "json":
+                format_json(tree_data)
+            elif args.format == "md":
+                format_markdown_tree(tree_data)
+
+
+        if not copy_to_clipboard(content_to_copy, logger=logger):
             output_buffer.write(
                 "Warning: Could not copy to clipboard. "
                 "Please install a clipboard utility (xclip, wl-copy) "
@@ -374,40 +441,3 @@ def run_tree_mode(
         else:
             output_buffer.clear()
             logger.log(logger.INFO, "Tree output copied to clipboard successfully.")
-
-    # Handle file exports
-    if args.json or args.txt or args.md:
-        from .tree_formatting_service import build_tree_data, write_outputs
-
-        include_contents = not args.no_contents
-
-        # NOTE: exports use the last processed root (matches previous behavior)
-        tree_data = build_tree_data(
-            root=root,
-            output_buffer=output_buffer,
-            logger=logger,
-            depth=args.max_depth,
-            show_all=args.hidden_items,
-            extra_excludes=args.exclude,
-            respect_gitignore=not args.no_gitignore,
-            gitignore_depth=args.gitignore_depth,
-            max_items=args.max_items,
-            max_lines=args.max_lines,
-            exclude_depth=args.exclude_depth,
-            no_files=args.no_files,
-            whitelist=selected_files,
-            include_patterns=args.include,
-            include_file_types=args.include_file_types,
-            include_contents=include_contents,
-            no_contents_for=args.no_contents_for
-        )
-
-        write_outputs(
-            logger=logger,
-            tree_data=tree_data,
-            json_path=args.json,
-            txt_path=args.txt,
-            md_path=args.md,
-            emoji=args.emoji,
-            include_contents=include_contents,
-        )

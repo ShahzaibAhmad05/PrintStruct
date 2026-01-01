@@ -124,10 +124,7 @@ def build_tree_data(
 
             if max_lines is not None and lines >= max_lines:
                 remaining = len(entries) - i + truncated
-                children.append({
-                    "name": f"... and more lines",
-                    "type": "truncated"
-                })
+                children.append({"name": "... and more lines", "type": "truncated"})
                 stop_writing = True
                 break
 
@@ -137,12 +134,14 @@ def build_tree_data(
                     "type": "file",
                     "path": str(entry.relative_to(root).as_posix())
                 }
-                # Add file contents if requested
-            if include_contents and entry.resolve() not in no_contents_for:
-                file_node["contents"] = read_file_contents(entry)
+
+                # FIX: only touch file_node inside the file branch
+                if include_contents and entry.resolve() not in no_contents_for:
+                    file_node["contents"] = read_file_contents(entry)
 
                 children.append(file_node)
                 lines += 1
+
             elif entry.is_dir():
                 lines += 1
                 child_node = {
@@ -151,6 +150,7 @@ def build_tree_data(
                     "children": rec(entry, current_depth + 1, patterns)
                 }
                 children.append(child_node)
+
 
         # Add truncation marker if needed
         if truncated > 0 and not stop_writing:
@@ -321,9 +321,10 @@ def format_markdown_tree(tree_data: Dict[str, Any], emoji: bool = False, include
 def write_outputs(
     logger: Logger,
     tree_data: Dict[str, Any],
-    json_path: Optional[str],
-    txt_path: Optional[str],
-    md_path: Optional[str],
+    output_path: str,
+    md: bool=False,
+    json: bool=False,
+    txt: bool=False,
     emoji: bool = False,
     include_contents: bool = True
 ) -> None:
@@ -338,20 +339,14 @@ def write_outputs(
         emoji: Emoji flag for text formatting
         include_contents: If True, include file contents in outputs (default: True)
     """
+    if md: func = format_markdown_tree
+    elif json: func = format_json
+    elif txt: func = format_text_tree
+
     try:
-        if json_path:
-            content = format_json(tree_data)
-            with open(json_path, 'w', encoding='utf-8') as f:
-                f.write(content)
-
-        if txt_path:
-            content = format_text_tree(tree_data, emoji=emoji, include_contents=include_contents)
-            with open(txt_path, 'w', encoding='utf-8') as f:
-                f.write(content)
-
-        if md_path:
-            content = format_markdown_tree(tree_data, emoji=emoji, include_contents=include_contents)
-            with open(md_path, 'w', encoding='utf-8') as f:
+        if output_path:
+            content = func(tree_data)
+            with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(content)
 
     except IOError as e:

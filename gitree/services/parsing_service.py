@@ -86,18 +86,6 @@ def parse_args() -> argparse.Namespace:
         help="Create a zip file containing files under path (respects .gitignore)",
     )
     io.add_argument(
-        "--json",
-        metavar="FILE",
-        default=argparse.SUPPRESS,
-        help="Export tree as JSON to specified file",
-    )
-    io.add_argument(
-        "--txt",
-        metavar="FILE",
-        default=argparse.SUPPRESS,
-        help="Export tree as text to specified file",
-    )
-    io.add_argument(
         "--no-contents",
         action="store_true",
         default=argparse.SUPPRESS,
@@ -117,12 +105,6 @@ def parse_args() -> argparse.Namespace:
         help="Override files even if they exist (for file outputs)",
     )
     ap.add_argument(
-        "--md",
-        metavar="FILE",
-        default=argparse.SUPPRESS,
-        help="Export tree as Markdown to specified file",
-    )
-    ap.add_argument(
         "-o", "--output",
         default=argparse.SUPPRESS,
         help="Save tree structure to file",
@@ -133,6 +115,12 @@ def parse_args() -> argparse.Namespace:
     # =========================
     listing = ap.add_argument_group("Listing flags")
 
+    ap.add_argument(
+        "--format",
+        choices=["txt", "json", "md"],
+        default="txt",
+        help="Format output only (txt, json, md)"
+    )
     listing.add_argument(
         "--max-depth",
         type=int,
@@ -270,14 +258,17 @@ def correct_args(args: argparse.Namespace) -> argparse.Namespace:
     """
     # Fix output path if specified incorrectly
     if args.output is not None:
-        args.output = fix_output_path(args.output, default_extension=".txt")
+        args.output = fix_output_path(args.output, 
+                        default_extensions={"txt": ".txt", "json": ".json", "md": ".md"}, 
+                        format_str=args.format)
     if args.zip is not None:
         args.zip = fix_output_path(args.zip, default_extension=".zip")
 
     return args
 
 
-def fix_output_path(output_path: str, default_extension: str) -> str:
+def fix_output_path(output_path: str, default_extension: str="",
+                    default_extensions: dict={}, format_str: str="") -> str:
     """
     Ensure the output path has a .txt extension.
 
@@ -290,6 +281,9 @@ def fix_output_path(output_path: str, default_extension: str) -> str:
     """
     path = Path(output_path)
     if path.suffix == '':
-        path = path.with_suffix(default_extension)
+        if default_extension:
+            path = path.with_suffix(default_extension)
+        elif default_extensions:
+            path = path.with_suffix(default_extensions[format_str])
 
     return str(path)
