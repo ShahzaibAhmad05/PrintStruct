@@ -6,7 +6,6 @@ on:
 
 permissions:
   contents: read
-  # keep these, but we’ll actually use PAT for the comment
   issues: write
   pull-requests: write
 
@@ -34,15 +33,34 @@ jobs:
 
             // Avoid duplicate comment spam
             const { data: comments } = await github.rest.issues.listComments({
-              owner, repo, issue_number: pr_number, per_page: 100,
+              owner,
+              repo,
+              issue_number: pr_number,
+              per_page: 100,
             });
 
-            const already = comments.some(c => (c.body || "").includes("Thank you for the pull request! ✅"));
+            const already = comments.some(c =>
+              (c.body || "").includes("Thank you for the pull request! ✅")
+            );
             if (already) return;
 
+            // Create comment
             await github.rest.issues.createComment({
               owner,
               repo,
               issue_number: pr_number,
               body,
             });
+
+            // React to the PR with 👀
+            try {
+              await github.rest.reactions.createForIssue({
+                owner,
+                repo,
+                issue_number: pr_number,
+                content: "eyes",
+              });
+            } catch (e) {
+              // Don't fail the workflow if reactions aren't permitted
+              core.info(`Could not add reaction: ${e.message}`);
+            }
