@@ -157,3 +157,10 @@ gitree --zip project.zip src/
         listing_control.add_argument("--no-gitignore", action="store_true", default=argparse.SUPPRESS, help="Ignore .gitignore rules")
         listing_control.add_argument("--no-limit", action="store_true", default=argparse.SUPPRESS, help="Show all items regardless of count")
         listing_control.add_argument("--no-files", action="store_true", default=argparse.SUPPRESS, help="Hide files (only directories)")
+
+
+def parse_args(*args, logger=None, **kwargs) -> argparse.Namespace:
+    return ParsingService(logger=logger).parse_args(*args, **kwargs)
+
+def correct_args(args: argparse.Namespace) -> argparse.Namespace:
+    return ParsingService().correct_args(args)
