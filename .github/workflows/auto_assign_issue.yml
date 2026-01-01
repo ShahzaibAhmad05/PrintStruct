@@ -24,6 +24,8 @@ jobs:
             const issue_number = context.payload.issue.number;
             const assignee = context.payload.comment.user.login;
 
+            const comment_id = context.payload.comment.id;
+
             const body = (context.payload.comment.body || '').toLowerCase();
 
             // keyword check for auto-assigning
@@ -39,10 +41,26 @@ jobs:
               return;
             }
 
+            // Helper: react to the triggering comment
+            async function react(content) {
+              try {
+                await github.rest.reactions.createForIssueComment({
+                  owner,
+                  repo,
+                  comment_id,
+                  content, // "+1", "confused", "rocket", etc.
+                });
+              } catch (e) {
+                // If reactions aren't permitted for some reason, don't fail the whole workflow.
+                core.info(`Could not add reaction (${content}): ${e.message}`);
+              }
+            }
+
             // 1) Don't reassign if already assigned
             const current = context.payload.issue.assignees?.map(a => a.login) || [];
             if (current.length > 0) {
               core.info(`Already assigned to: ${current.join(', ')}`);
+              await react('confused');
               return;
             }
 
@@ -84,6 +102,8 @@ jobs:
                   suggestionText,
                 ].join('\n'),
               });
+
+              await react('confused');
               return;
             }
 
@@ -122,11 +142,7 @@ jobs:
                 }
               `;
 
-              const data = await github.graphql(query, {
-                owner,
-                repo,
-                number: issueNum,
-              });
+              const data = await github.graphql(query, { owner, repo, number: issueNum });
 
               const iop = data?.repository?.issueOrPullRequest;
               if (!iop || iop.__typename !== 'Issue') return false;
@@ -139,7 +155,6 @@ jobs:
 
                 if ((pr?.author?.login || '').toLowerCase() === assignee.toLowerCase()) {
                   // Counts any PR state (OPEN/MERGED/CLOSED) as "has a PR for it".
-                  // If you want ONLY open PRs, add: && pr.state === "OPEN"
                   return true;
                 }
               }
@@ -185,6 +200,7 @@ jobs:
                 ].join('\n'),
               });
 
+              await react('confused');
               return;
             }
 
@@ -198,3 +214,5 @@ jobs:
               owner, repo, issue_number,
               body: `🎉 Thank you for your interest in contributing!\n\nThe issue has been assigned to @${assignee}. Happy coding!`,
             });
+
+            await react('rocket');
