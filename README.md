@@ -149,6 +149,15 @@ gitree --zip out
 
 creates **out.zip** in the same directory.
 
+For **combining interactive selection with output**:
+
+```bash
+gitree --output project -i
+
+```
+
+This allows you to interactively select files and save the output to **project.txt**.
+
 ---
 
 ## 🧭 Interactive Mode
