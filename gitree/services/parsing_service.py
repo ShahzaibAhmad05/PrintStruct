@@ -47,7 +47,7 @@ class ParsingService:
 
         args = ap.parse_args()
         if self.logger:
-            self.logger.debug("Parsed arguments: %s", args)
+            self.logger(Logger.DEBUG, "Parsed arguments: %s", args)
 
         # Correct the arguments before returning to avoid complexity
         # in implementation in main function
@@ -129,11 +129,16 @@ class ParsingService:
 
     def _add_general_options(self, ap: argparse.ArgumentParser):
         basic = ap.add_argument_group("general options")
-        basic.add_argument("-v", "--version", action="store_true", help="Display the version of the tool")
-        basic.add_argument("--init-config", action="store_true", help="Create a default config.json file")
-        basic.add_argument("--config-user", action="store_true", help="Open config.json in the default editor")
-        basic.add_argument("--no-config", action="store_true", help="Ignore config.json and use defaults")
-        basic.add_argument("--verbose", action="store_true", default=argparse.SUPPRESS, help="Enable verbose output")
+        basic.add_argument("-v", "--version", action="store_true", 
+            default=argparse.SUPPRESS, help="Display the version of the tool")
+        basic.add_argument("--init-config", action="store_true", 
+            default=argparse.SUPPRESS, help="Create a default config.json file")
+        basic.add_argument("--config-user", action="store_true", 
+            default=argparse.SUPPRESS, help="Open config.json in the default editor")
+        basic.add_argument("--no-config", action="store_true", 
+            default=argparse.SUPPRESS, help="Ignore config.json and use defaults")
+        basic.add_argument("--verbose", action="store_true", 
+            default=argparse.SUPPRESS, help="Enable verbose output")
 
 
     def _add_io_flags(self, ap: argparse.ArgumentParser):
@@ -149,7 +154,7 @@ class ParsingService:
         listing = ap.add_argument_group("listing options")
 
         listing.add_argument("--format", choices=["txt", "json", "md"], 
-            default="txt", help="Format output only")
+            default=argparse.SUPPRESS, help="Format output only")
         
         listing.add_argument("--max-items", type=max_items_int, 
             default=argparse.SUPPRESS, help="Limit items per directory")
@@ -179,20 +184,21 @@ class ParsingService:
             default=argparse.SUPPRESS, help="Interactive mode")
         
         listing.add_argument("--files-first", action="store_true", 
-            default=False, help="Print files before directories")
+            default=argparse.SUPPRESS, help="Print files before directories")
         listing.add_argument("--no-color", action="store_true", 
             default=argparse.SUPPRESS, help="Disable color output")
         listing.add_argument("--no-contents", action="store_true", 
             default=argparse.SUPPRESS, help="Don't include file contents")
-        listing.add_argument("--no-contents-for", nargs="+", default=[], 
-            metavar="PATH", help="Exclude contents for specific files")
+        listing.add_argument("--no-contents-for", nargs="+", 
+            default=argparse.SUPPRESS, metavar="PATH", 
+            help="Exclude contents for specific files")
         listing.add_argument("--overrride-files", action="store_true", 
             default=argparse.SUPPRESS, help="Override existing files") 
 
 
     def _add_listing_control_flags(self, ap: argparse.ArgumentParser):
         listing_control = ap.add_argument_group("listing override options")
-        
+
         listing_control.add_argument("--no-max-lines", action="store_true", 
             default=argparse.SUPPRESS, help="Disable max lines limit")
         listing_control.add_argument("--no-gitignore", action="store_true", 

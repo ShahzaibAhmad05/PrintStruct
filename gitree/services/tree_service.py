@@ -218,82 +218,6 @@ def draw_tree(
         output_buffer.write(truncation_prefix + LAST + f"... and {remaining} more lines")
 
 
-def print_summary(
-    *,
-    root: Path,
-    output_buffer: OutputBuffer,
-    logger: Logger,
-    respect_gitignore: bool = True,
-    gitignore_depth: Optional[int] = None,
-    extra_excludes: Optional[List[str]] = None,
-    include_patterns: List[str] = None,
-    include_file_types: List[str] = None,
-) -> None:
-    """
-    Print a summary showing the count of directories and files at each depth level.
-
-    Args:
-        root (Path): Root directory path to analyze
-        output_buffer (OutputBuffer): Buffer to write output to
-        logger (Logger): Logger instance for logging
-        respect_gitignore (bool): If True, respect .gitignore rules. Defaults to True
-        gitignore_depth (Optional[int]): Maximum depth to search for .gitignore files
-        extra_excludes (Optional[List[str]]): Additional exclude patterns
-        include_patterns (List[str]): Patterns for files to include
-        include_file_types (List[str]): File types (extensions) to include
-
-    Returns:
-        None: Prints summary statistics to stdout
-    """
-    summary = defaultdict(lambda: {"dirs": 0, "files": 0})
-    gi = GitIgnoreMatcher(root, enabled=respect_gitignore, gitignore_depth=gitignore_depth)
-    extra_excludes = extra_excludes or []
-
-    def count(dirpath: Path, current_depth: int, patterns: List[str]):
-        if respect_gitignore and gi.within_depth(dirpath):
-            gi_path = dirpath / ".gitignore"
-            if gi_path.is_file():
-                rel_dir = dirpath.relative_to(root).as_posix()
-                prefix_path = "" if rel_dir == "." else rel_dir + "/"
-                for line in gi_path.read_text(encoding="utf-8", errors="ignore").splitlines():
-                    line = line.strip()
-                    if not line or line.startswith("#"):
-                        continue
-                    neg = line.startswith("!")
-                    pat = line[1:] if neg else line
-                    pat = prefix_path + pat.lstrip("/")
-                    patterns = patterns + [("!" + pat) if neg else pat]
-
-        spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
-
-        entries, _ = list_entries(
-            dirpath,
-            root=root,
-            gi=gi,
-            spec=spec,
-            show_all=False,
-            extra_excludes=extra_excludes,
-            max_items=None,
-            exclude_depth=None,
-            no_files=False,
-            include_patterns=include_patterns,
-            include_file_types=include_file_types,
-        )
-
-        for entry in entries:
-            if entry.is_dir():
-                summary[current_depth]["dirs"] += 1
-                count(entry, current_depth + 1, patterns)
-            else:
-                summary[current_depth]["files"] += 1
-
-    count(root, 0, [])
-
-    output_buffer.write("\nDirectory Summary:")
-    for level in sorted(summary):
-        output_buffer.write(f"Level {level}: {summary[level]['dirs']} dirs, {summary[level]['files']} files")
-
-
 def run_tree_mode(
     args,
     roots: List[Path],
@@ -342,18 +266,6 @@ def run_tree_mode(
             include_file_types=args.include_file_types,
             files_first=args.files_first,
         )
-
-        if args.summary:
-            print_summary(
-                root=root,
-                output_buffer=output_buffer,
-                logger=logger,
-                respect_gitignore=not args.no_gitignore,
-                gitignore_depth=args.gitignore_depth,
-                extra_excludes=args.exclude,
-                include_patterns=args.include,
-                include_file_types=args.include_file_types,
-            )
 
     # Write to output file if requested
     if args.output is not None:

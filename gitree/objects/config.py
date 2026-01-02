@@ -72,7 +72,7 @@ class Config:
             "files_first": False,
             "no_color": False,
             "no_contents": False,
-            "no_contents_for": False,
+            "no_contents_for": [],
             "override_files": True,
 
             # Listing override options
