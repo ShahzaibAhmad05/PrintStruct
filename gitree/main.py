@@ -5,7 +5,7 @@ if sys.platform.startswith('win'):      # fix windows unicode error on CI
     sys.stdout.reconfigure(encoding='utf-8')
 
 from .services.tree_service import run_tree_mode
-from .services.parsing_service import parse_args, correct_args
+from .services.parsing_service import ParsingService
 from .utilities.config import resolve_config
 from .utilities.logger import Logger, OutputBuffer
 from .services.basic_args_handling_service import handle_basic_cli_args, resolve_root_paths
@@ -26,11 +26,13 @@ def main() -> None:
         - Do not put implementation details here
         - Use services/ and utilities/ modules for logic, and import their functions here
     """
-    args = parse_args()
     logger = Logger()
     output_buffer = OutputBuffer()
 
 
+    # Get the CLI args
+    parsingService = ParsingService(logger)
+    args = parsingService.parse_args()
     # Resolve --no-contents-for paths
     args.no_contents_for = [Path(p).resolve() for p in args.no_contents_for]
 
@@ -39,8 +41,6 @@ def main() -> None:
     args = resolve_config(args, logger=logger)
 
 
-    # Fix any incorrect CLI args (paths missing extensions, etc.)
-    args = correct_args(args)
     # This one bellow is also used for determining whether to draw tree or not
     no_output_mode = args.copy or args.output or args.zip 
 
