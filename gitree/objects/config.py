@@ -44,40 +44,42 @@ class Config:
         """
 
         return {
+            # General Options
+            "version": False,
+            "init_config": False,
+            "config_user": False,
+            "no_config": False,
+            "verbose": False,
+
+            # Output & export options
+            "zip": None,
+            "output": None,
+
+            # Listing options
+            "format": "txt",
             "max_items": 20,
             "max_lines": 40,
             "max_depth": None,
             "gitignore_depth": None,
-            "exclude_depth": None,
-
             "hidden_items": False,
             "exclude": [],
+            "exclude_depth": None,
             "include": [],
-            "include_file_type": None,
             "include_file_types": [],
-
-            # export/IO related
-            "zip": None,
-            "json": None,
-            "txt": None,
-            "md": None,
-            "output": None,
             "copy": False,
-
-            # modes
-            "interactive": False,
-
-            # toggles
             "emoji": False,
+            "interactive": False,
+            "files_first": False,
             "no_color": False,
+            "no_contents": False,
+            "no_contents_for": False,
+            "override_files": True,
+
+            # Listing override options
             "no_gitignore": False,
             "no_files": False,
             "no_limit": False,
             "no_max_lines": False,
-            "no_contents": False,
-            "override_files": True,
-            "summary": False,
-            "verbose": False,
             "no_printing": False
         }
     

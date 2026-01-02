@@ -26,12 +26,14 @@ def main() -> None:
         - Do not put implementation details here
         - Use services/ and utilities/ modules for logic, and import their functions here
     """
+    # Instances for Logger and Output Buffer
+    # passed to every class instance
     logger = Logger()
     output_buffer = OutputBuffer()
 
 
     # Get the CLI args
-    parsingService = ParsingService(logger)
+    parsingService = ParsingService(logger=logger, output_buffer=output_buffer)
     args = parsingService.parse_args()
     # Resolve --no-contents-for paths
     args.no_contents_for = [Path(p).resolve() for p in args.no_contents_for]
