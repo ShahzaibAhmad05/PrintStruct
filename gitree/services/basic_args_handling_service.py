@@ -7,45 +7,45 @@ from typing import List
 from gitree import __version__
 
 
+def resolve_root_paths(args: argparse.Namespace, logger: Logger) -> List[Path]:
+    roots: list[Path] = []
 
+    def add_root(p: Path):
+        p = p.resolve()
 
+        # files → parent directory
+        if p.is_file():
+            p = p.parent
 
-def resolve_root_paths(args: argparse.Namespace, logger: Logger) -> List[str]:
-    """
-    Resolve and validate root paths from CLI arguments.
+        # dedupe + collapse nested roots
+        for i, r in enumerate(list(roots)):
+            if p == r or p.is_relative_to(r):
+                return
+            if r.is_relative_to(p):
+                roots[i] = p
+                return
 
-    Args:
-        args: Parsed argparse.Namespace object with a `paths` attribute
-        logger: Logger instance for logging errors
+        roots.append(p)
 
-    Returns:
-        A list of resolved Path objects
-    """
-    roots = []
-    
     for path_str in args.paths:
+        # force recursive behavior for "*.py"
+        if path_str.strip() == "*.py":
+            path_str = "**/*.py"
 
-        # Check if path contains glob wildcards
-        if '*' in path_str or '?' in path_str:
-            # Expand glob pattern
-            matches = glob.glob(path_str)
+        if any(ch in path_str for ch in "*?["):
+            matches = glob.glob(path_str, recursive=True)
             if not matches:
                 logger.log(Logger.WARNING, f"no matches found for pattern: {path_str}")
-                # raise SystemExit(1) NOTE: quietly exit for now
-            for match in matches:
-                roots.append(Path(match).resolve())
-
+                continue
+            for m in matches:
+                add_root(Path(m))
         else:
-            # Regular path without wildcards
-            path = Path(path_str).resolve()
-            if not path.exists():
-
-                logger.log(Logger.ERROR, f"path not found: {path}")
-                print(f"ERROR: path not found {path}",file=sys.stderr)
-
-                # raise SystemExit(1) NOTE: quietly exit for now
-            else:
-                roots.append(path)
+            p = Path(path_str).resolve()
+            if not p.exists():
+                logger.log(Logger.ERROR, f"path not found: {p}")
+                print(f"ERROR: path not found {p}", file=sys.stderr)
+                continue
+            add_root(p)
 
     return roots
 
