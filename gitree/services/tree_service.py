@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List, Optional, Set
 from ..utilities.gitignore import GitIgnoreMatcher
 from .list_enteries import list_entries
-from ..utilities.logger import Logger, ExportBuffer
+from ..utilities.logger import Logger, OutputBuffer
 from ..utilities.utils import copy_to_clipboard
 from ..constants.constant import (BRANCH, LAST, SPACE, VERT,
                                   FILE_EMOJI, EMPTY_DIR_EMOJI,
@@ -18,7 +18,7 @@ from collections import defaultdict
 def draw_tree(
     *,
     root: Path,
-    output_buffer: ExportBuffer,
+    output_buffer: OutputBuffer,
     logger: Logger,
     depth: Optional[int],
     show_all: bool,
@@ -42,7 +42,7 @@ def draw_tree(
 
     Args:
         root (Path): Root directory path to start the tree from
-        output_buffer (ExportBuffer): Buffer to write Export to
+        output_buffer (OutputBuffer): Buffer to write Export to
         logger (Logger): Logger instance for logging
         depth (Optional[int]): Maximum depth to traverse. None for unlimited
         show_all (bool): If True, include hidden files and directories
@@ -268,7 +268,7 @@ def run_tree_mode(
         )
 
     # Write to output file if requested
-    if args.output is not None:
+    if args.export is not None:
         # If format is tree, write whatever was drawn to the buffer.
         if args.format == "tree":
             content = output_buffer.get_value()

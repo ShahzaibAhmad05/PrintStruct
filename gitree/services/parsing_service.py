@@ -67,7 +67,7 @@ class ParsingService:
             args.export = self._fix_output_path(
                 args.export,
                 default_extensions={"txt": ".txt", "json": ".json", "md": ".md"},
-                format_str=getattr(args, "format", "")
+                format_str=args.format
             )
         if getattr(args, "zip", None) is not None:
             args.zip = self._fix_output_path(args.zip, default_extension=".zip")
@@ -147,7 +147,7 @@ class ParsingService:
 
         io.add_argument("-z", "--zip", 
             default=argparse.SUPPRESS, help="Create a zip archive of the given path")
-        io.add_argument("-o", "--output", 
+        io.add_argument("--export", 
             default=argparse.SUPPRESS, help="Save tree structure to file")
 
 
@@ -155,7 +155,7 @@ class ParsingService:
         listing = ap.add_argument_group("listing options")
 
         listing.add_argument("--format", choices=["txt", "json", "md"], 
-            default=argparse.SUPPRESS, help="Format output only")
+            default="txt", help="Format output only")
         
         listing.add_argument("--max-items", type=max_items_int, 
             default=argparse.SUPPRESS, help="Limit items per directory")

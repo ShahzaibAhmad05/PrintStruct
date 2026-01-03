@@ -29,7 +29,7 @@ from prompt_toolkit.styles import Style
 
 from ..utilities.gitignore import GitIgnoreMatcher
 from ..utilities.utils import matches_file_type
-from ..utilities.logger import Logger, ExportBuffer
+from ..utilities.logger import Logger, OutputBuffer
 from ..services.list_enteries import list_entries
 import pathspec
 import argparse
@@ -38,7 +38,7 @@ import argparse
 def select_files(
     *,
     root: Path,
-    output_buffer: ExportBuffer,
+    output_buffer: OutputBuffer,
     logger: Logger,
     respect_gitignore: bool = True,
     gitignore_depth: int = None,
@@ -282,7 +282,7 @@ def select_files(
 def get_interactive_file_selection(
     *,
     roots: List[Path],
-    output_buffer: ExportBuffer,
+    output_buffer: OutputBuffer,
     logger: Logger,
     args: argparse.Namespace,
 ) -> dict:

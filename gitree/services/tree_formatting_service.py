@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 from ..utilities.gitignore import GitIgnoreMatcher
 from ..utilities.utils import read_file_contents, get_language_hint
-from ..utilities.logger import Logger, ExportBuffer
+from ..utilities.logger import Logger, OutputBuffer
 from .list_enteries import list_entries
 from ..constants.constant import (BRANCH, LAST, SPACE, VERT,
                                   FILE_EMOJI, EMPTY_DIR_EMOJI,
@@ -15,7 +15,7 @@ import pathspec
 def build_tree_data(
     *,
     root: Path,
-    output_buffer: ExportBuffer,
+    output_buffer: OutputBuffer,
     logger: Logger,
     depth: Optional[int],
     show_all: bool,

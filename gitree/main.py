@@ -38,7 +38,7 @@ def main() -> None:
 
 
     # This one bellow is also used for determining whether to draw tree or not
-    no_output_mode = config.copy or config.output or config.zip 
+    no_output_mode = config.copy or config.export or config.zip 
 
 
     # if some specific Basic CLI args given, execute and return

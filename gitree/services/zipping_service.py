@@ -2,7 +2,7 @@
 from pathlib import Path
 from typing import List, Optional, Set
 from ..utilities.gitignore import GitIgnoreMatcher
-from ..utilities.logger import Logger, ExportBuffer
+from ..utilities.logger import Logger, OutputBuffer
 from .list_enteries import list_entries
 import zipfile, pathspec, argparse
 
@@ -12,7 +12,7 @@ def zip_project_to_handle(
     zipPath: Path,
     *,
     root: Path,
-    output_buffer: ExportBuffer,
+    output_buffer: OutputBuffer,
     logger: Logger,
     show_all: bool,
     extra_excludes: List[str],
@@ -191,7 +191,7 @@ def zip_project(
 def zip_roots(
     args: argparse.Namespace, 
     roots: List[Path], 
-    output_buffer: ExportBuffer, 
+    output_buffer: OutputBuffer, 
     logger: Logger,
     selected_files_map: Optional[dict] = None
 ) -> None:
@@ -201,7 +201,7 @@ def zip_roots(
     Args:
         args (argparse.Namespace): Parsed command-line arguments
         roots (List[Path]): List of root paths to zip
-        output_buffer (ExportBuffer): Buffer to write export to
+        output_buffer (OutputBuffer): Buffer to write export to
         logger (Logger): Logger instance for logging
         selected_files_map (Optional[dict]): Map of root path to selected files (set of strings)
     """

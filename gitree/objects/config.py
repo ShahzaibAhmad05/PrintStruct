@@ -53,7 +53,7 @@ class Config:
 
             # Output & export options
             "zip": None,
-            "output": None,
+            "export": None,
 
             # Listing options
             "format": "txt",
