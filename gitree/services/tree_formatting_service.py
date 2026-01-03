@@ -23,7 +23,7 @@ def build_tree_data(
     respect_gitignore: bool,
     gitignore_depth: Optional[int],
     max_items: Optional[int] = None,
-    max_lines: Optional[int] = None,
+    max_entries: Optional[int] = None,
     exclude_depth: Optional[int] = None,
     no_files: bool = False,
     whitelist: Optional[Set[str]] = None,
@@ -56,12 +56,12 @@ def build_tree_data(
         "children": []
     }
 
-    lines=1 # Count lines for max_lines limit
-    stop_writing=False # Flag to stop writing when max_lines is reached
+    entries=1 # Count lines for max_entries limit
+    stop_writing=False # Flag to stop writing when max_entries is reached
 
     def rec(dirpath: Path, current_depth: int, patterns: List[str]) -> List[Dict[str, Any]]:
         """Recursively build tree data for a directory."""
-        nonlocal lines, stop_writing
+        nonlocal entries, stop_writing
         if depth is not None and current_depth >= depth:
             return []
 
@@ -95,7 +95,7 @@ def build_tree_data(
             show_all=show_all,
             extra_excludes=extra_excludes,
             max_items=max_items,
-            max_lines=max_lines,
+            max_entries=max_entries,
             exclude_depth=exclude_depth,
             no_files=no_files,
             include_patterns=include_patterns,
@@ -123,9 +123,9 @@ def build_tree_data(
             if stop_writing:
                 break
 
-            if max_lines is not None and lines >= max_lines:
+            if max_entries is not None and lines >= max_entries:
                 remaining = len(entries) - i + truncated
-                children.append({"name": "... and more lines", "type": "truncated"})
+                children.append({"name": "... and more entries", "type": "truncated"})
                 stop_writing = True
                 break
 
@@ -144,7 +144,7 @@ def build_tree_data(
                 lines += 1
 
             elif entry.is_dir():
-                lines += 1
+                entries += 1
                 child_node = {
                     "name": entry.name,
                     "type": "directory",
@@ -159,7 +159,7 @@ def build_tree_data(
                 "name": f"... and {truncated} more items",
                 "type": "truncated"
             })
-            lines += 1
+            entries += 1
 
         return children
 

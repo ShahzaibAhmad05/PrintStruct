@@ -90,13 +90,13 @@ def validate_config(logger: Logger, config: Dict[str, Any]) -> None:
                 logger.log(Logger.ERROR, 
                     "key 'max_items' must be between 1 and 10000, got {value} in config.json")
 
-        elif key == "max_lines":
+        elif key == "max_entries":
             if not isinstance(value, int):
                 logger.log(Logger.ERROR, 
-                    f"key 'max_lines' must be int, got {type(value).__name__} in config.json")
+                    f"key 'max_entries' must be int, got {type(value).__name__} in config.json")
             if value < 1:
                 logger.log(Logger.ERROR, 
-                    f"key 'max_lines' must be positive, got {value} in config.json")
+                    f"key 'max_entries' must be positive, got {value} in config.json")
 
         elif key in optional_int_keys:
             if not isinstance(value, int):

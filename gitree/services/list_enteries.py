@@ -18,7 +18,7 @@ def list_entries(
     show_all: bool,
     extra_excludes: List[str],
     max_items: Optional[int] = None,
-    max_lines: Optional[int] = None,
+    max_entries: Optional[int] = None,
     no_limit: bool = False,
     exclude_depth: Optional[int] = None,
     no_files: bool = False,
@@ -39,7 +39,7 @@ def list_entries(
         show_all (bool): If True, include hidden files
         extra_excludes (List[str]): Additional exclude patterns
         max_items (Optional[int]): Maximum number of items to return
-        max_lines (Optional[int]): Maximum number of lines to return
+        max_entries (Optional[int]): Maximum number of entries to return
         exclude_depth (Optional[int]): Depth limit for exclude patterns
         no_files (bool): If True, exclude files from results
         include_patterns (List[str]): Patterns for files to include

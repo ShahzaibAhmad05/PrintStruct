@@ -26,7 +26,7 @@ def draw_tree(
     respect_gitignore: bool,
     gitignore_depth: Optional[int],
     max_items: Optional[int] = None,
-    max_lines: Optional[int] = None,
+    max_entries: Optional[int] = None,
     no_limit: bool = False,
     exclude_depth: Optional[int] = None,
     no_files: bool = False,
@@ -50,7 +50,7 @@ def draw_tree(
         respect_gitignore (bool): If True, respect .gitignore rules
         gitignore_depth (Optional[int]): Maximum depth to search for .gitignore files
         max_items (Optional[int]): Maximum number of items to show per directory
-        max_lines (Optional[int]): Maximum number of lines to show
+        max_entries (Optional[int]): Maximum number of entries to show
         exclude_depth (Optional[int]): Depth limit for exclude patterns
         no_files (bool): If True, only show directories
         emoji (bool): If True, show emoji icons in Export
@@ -65,7 +65,7 @@ def draw_tree(
     gi = GitIgnoreMatcher(root, enabled=respect_gitignore, gitignore_depth=gitignore_depth)
 
     output_buffer.write(root.name)
-    lines = 1
+    entries = 1
     truncation_prefix = None
 
     # Track if any files matched include patterns for warning messages
@@ -74,7 +74,7 @@ def draw_tree(
 
     def rec(dirpath: Path, prefix: str, current_depth: int, patterns: List[str]) -> None:
         nonlocal files_matched_include_patterns, files_matched_include_types
-        nonlocal lines, truncation_prefix
+        nonlocal entries, truncation_prefix
         
         if depth is not None and current_depth >= depth:
             return
@@ -151,11 +151,11 @@ def draw_tree(
 
 
         for i, entry in enumerate(entries):
-            if max_lines is not None and lines >= max_lines:
+            if max_entries is not None and lines >= max_entries:
                 if truncation_prefix is None:
                     truncation_prefix = prefix
                 
-                lines += 1
+                entries += 1
                 if entry.is_dir():
                     rec(entry, prefix + SPACE, current_depth + 1, patterns)
                 continue
@@ -184,21 +184,21 @@ def draw_tree(
                         emoji_str = NORMAL_DIR_EMOJI
                 output_buffer.write(prefix + connector + emoji_str + " " + entry.name + suffix)
             
-            lines += 1
+            entries += 1
 
             if entry.is_dir():
                 rec(entry, prefix + (SPACE if is_last else VERT),  current_depth + 1, patterns)
 
         # Show truncation message if items were hidden
         if truncated > 0:
-            if max_lines is not None and lines >= max_lines:
+            if max_entries is not None and lines >= max_entries:
                 if truncation_prefix is None:
                     truncation_prefix = prefix
-                lines += 1
+                entries += 1
             else:
                 # truncation line is always last among displayed items
                 output_buffer.write(prefix + LAST + f"... and {truncated} more items")
-                lines += 1
+                entries += 1
 
     if root.is_dir():
         rec(root, "", 0, [])
@@ -214,8 +214,8 @@ def draw_tree(
         print(f"Warning: No files found matching --include-file-types: {types_str}", file=sys.stderr)
         
     if truncation_prefix is not None:
-        remaining = lines - max_lines
-        output_buffer.write(truncation_prefix + LAST + f"... and {remaining} more lines")
+        remaining = entries - max_entries
+        output_buffer.write(truncation_prefix + LAST + f"... and {remaining} more entries")
 
 
 def run_tree_mode(
@@ -240,10 +240,10 @@ def run_tree_mode(
                 output_buffer.write("")  # Empty line between trees
             output_buffer.write(str(root))
 
-        # Determine max_lines based on flags
-        max_lines = args.max_lines
-        if args.no_max_lines:
-            max_lines = None
+        # Determine max_entries based on flags
+        max_entries = args.max_entries
+        if args.no_max_entries:
+            max_entries = None
 
         draw_tree(
             root=root,
@@ -255,7 +255,7 @@ def run_tree_mode(
             respect_gitignore=not args.no_gitignore,
             gitignore_depth=args.gitignore_depth,
             max_items=args.max_items,
-            max_lines=max_lines,
+            max_lines=max_entries,
             no_limit=args.no_limit,
             exclude_depth=args.exclude_depth,
             no_files=args.no_files,
@@ -288,7 +288,7 @@ def run_tree_mode(
                 respect_gitignore=not args.no_gitignore,
                 gitignore_depth=args.gitignore_depth,
                 max_items=args.max_items,
-                max_lines=args.max_lines,
+                max_entries=args.max_entries,
                 exclude_depth=args.exclude_depth,
                 no_files=args.no_files,
                 whitelist=selected_files,
@@ -329,7 +329,7 @@ def run_tree_mode(
                 respect_gitignore=not args.no_gitignore,
                 gitignore_depth=args.gitignore_depth,
                 max_items=args.max_items,
-                max_lines=args.max_lines,
+                max_entries=args.max_entries,
                 exclude_depth=args.exclude_depth,
                 no_files=args.no_files,
                 whitelist=selected_files,
