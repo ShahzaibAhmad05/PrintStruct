@@ -58,7 +58,7 @@ class Config:
             # Listing options
             "format": "txt",
             "max_items": 20,
-            "max_lines": 40,
+            "max_entries": 40,
             "max_depth": None,
             "gitignore_depth": None,
             "hidden_items": False,
@@ -79,7 +79,7 @@ class Config:
             "no_gitignore": False,
             "no_files": False,
             "no_limit": False,
-            "no_max_lines": False,
+            "no_max_entries": False,
             "no_printing": False
         }
     
