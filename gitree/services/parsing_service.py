@@ -1,7 +1,7 @@
 # gitree/services/parsing_service.py
 import argparse
 from pathlib import Path
-from ..utilities.utils import max_items_int, max_lines_int
+from ..utilities.utils import max_items_int, max_entries_int
 from ..utilities.logger import Logger, OutputBuffer
 from ..objects.config import Config
 
@@ -159,7 +159,7 @@ class ParsingService:
         
         listing.add_argument("--max-items", type=max_items_int, 
             default=argparse.SUPPRESS, help="Limit items per directory")
-        listing.add_argument("--max-lines", type=max_lines_int, 
+        listing.add_argument("--max-entries", type=max_entries_int, 
             default=argparse.SUPPRESS, help="Limit lines shown in tree output")
         listing.add_argument("--max-depth", type=int, 
             default=argparse.SUPPRESS, help="Maximum depth to traverse")
@@ -200,7 +200,7 @@ class ParsingService:
     def _add_listing_control_flags(self, ap: argparse.ArgumentParser):
         listing_control = ap.add_argument_group("listing override options")
 
-        listing_control.add_argument("--no-max-lines", action="store_true", 
+        listing_control.add_argument("--no-max-entries", action="store_true", 
             default=argparse.SUPPRESS, help="Disable max lines limit")
         listing_control.add_argument("--no-gitignore", action="store_true", 
             default=argparse.SUPPRESS, help="Ignore .gitignore rules")
