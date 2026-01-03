@@ -1,6 +1,6 @@
 # gitree/services/basic_args_handling_service.py
 from ..utilities.config import create_default_config, open_config_in_editor
-from ..utilities.logger import Logger, OutputBuffer
+from ..utilities.logger import Logger, ExportBuffer
 import argparse, glob, sys
 from pathlib import Path
 from typing import List

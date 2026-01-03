@@ -4,13 +4,13 @@ from pathlib import Path
 from typing import List, Optional, Set
 from ..utilities.gitignore import GitIgnoreMatcher
 from .list_enteries import list_entries
-from ..utilities.logger import Logger, OutputBuffer
+from ..utilities.logger import Logger, ExportBuffer
 from ..utilities.utils import copy_to_clipboard
 from ..constants.constant import (BRANCH, LAST, SPACE, VERT,
                                   FILE_EMOJI, EMPTY_DIR_EMOJI,
                                   NORMAL_DIR_EMOJI)
 from ..utilities.colors import colorize_text
-from .tree_formatting_service import write_outputs, build_tree_data, format_markdown_tree, format_json, format_text_tree
+from .tree_formatting_service import write_exports, build_tree_data, format_markdown_tree, format_json, format_text_tree
 import pathspec
 from collections import defaultdict
 
@@ -18,7 +18,7 @@ from collections import defaultdict
 def draw_tree(
     *,
     root: Path,
-    output_buffer: OutputBuffer,
+    output_buffer: ExportBuffer,
     logger: Logger,
     depth: Optional[int],
     show_all: bool,
@@ -42,7 +42,7 @@ def draw_tree(
 
     Args:
         root (Path): Root directory path to start the tree from
-        output_buffer (OutputBuffer): Buffer to write output to
+        output_buffer (ExportBuffer): Buffer to write Export to
         logger (Logger): Logger instance for logging
         depth (Optional[int]): Maximum depth to traverse. None for unlimited
         show_all (bool): If True, include hidden files and directories
@@ -53,8 +53,8 @@ def draw_tree(
         max_lines (Optional[int]): Maximum number of lines to show
         exclude_depth (Optional[int]): Depth limit for exclude patterns
         no_files (bool): If True, only show directories
-        emoji (bool): If True, show emoji icons in output
-        no_color (bool): If True, disable colorized output
+        emoji (bool): If True, show emoji icons in Export
+        no_color (bool): If True, disable colorized Export
         whitelist (Optional[Set[str]]): Set of file paths to exclusively include
         include_patterns (List[str]): Patterns for files to include
         include_file_types (List[str]): File types (extensions) to include
@@ -309,12 +309,12 @@ def run_tree_mode(
                 # fallback safety
                 content = output_buffer.get_value()
 
-        with open(args.output, "w", encoding="utf-8") as f:
+        with open(args.export, "w", encoding="utf-8") as f:
             f.write(content)
 
 
     if args.copy:
-        # Copy the formatted output, not always the unicode tree
+        # Copy the formatted Export, not always the unicode tree
         content_to_copy = output_buffer.get_value()
         if args.format in ("json", "md"):
 
@@ -353,4 +353,4 @@ def run_tree_mode(
             )
         else:
             output_buffer.clear()
-            logger.log(logger.INFO, "Tree output copied to clipboard successfully.")
+            logger.log(logger.INFO, "Tree Export copied to clipboard successfully.")

@@ -2,7 +2,7 @@
 from pathlib import Path
 from typing import List, Optional, Set
 from ..utilities.gitignore import GitIgnoreMatcher
-from ..utilities.logger import Logger, OutputBuffer
+from ..utilities.logger import Logger, ExportBuffer
 from .list_enteries import list_entries
 import zipfile, pathspec, argparse
 
@@ -12,7 +12,7 @@ def zip_project_to_handle(
     zipPath: Path,
     *,
     root: Path,
-    output_buffer: OutputBuffer,
+    output_buffer: ExportBuffer,
     logger: Logger,
     show_all: bool,
     extra_excludes: List[str],
@@ -32,7 +32,7 @@ def zip_project_to_handle(
     arcname_prefix: prefix to add to archive names (e.g., "project1/")
     """
     gi = GitIgnoreMatcher(root, enabled=respect_gitignore, gitignore_depth=gitignore_depth)
-    output_zip_resolved = zipPath.resolve()
+    export_zip_resolved = zipPath.resolve()
 
     def rec(dirpath: Path, rec_depth: int, patterns: List[str]) -> None:
         if depth is not None and rec_depth >= depth:
@@ -74,7 +74,7 @@ def zip_project_to_handle(
 
         for entry in entries:
             # NOTE: this is a patch for infinite zipping glitch on windows
-            if output_zip_resolved is not None and entry.resolve() == output_zip_resolved:
+            if export_zip_resolved is not None and entry.resolve() == export_zip_resolved:
                 logger.log(Logger.WARNING, "Infinite zipping detected, skipping this file.")
                 continue
 
@@ -191,7 +191,7 @@ def zip_project(
 def zip_roots(
     args: argparse.Namespace, 
     roots: List[Path], 
-    output_buffer: OutputBuffer, 
+    output_buffer: ExportBuffer, 
     logger: Logger,
     selected_files_map: Optional[dict] = None
 ) -> None:
@@ -201,7 +201,7 @@ def zip_roots(
     Args:
         args (argparse.Namespace): Parsed command-line arguments
         roots (List[Path]): List of root paths to zip
-        output_buffer (OutputBuffer): Buffer to write output to
+        output_buffer (ExportBuffer): Buffer to write export to
         logger (Logger): Logger instance for logging
         selected_files_map (Optional[dict]): Map of root path to selected files (set of strings)
     """

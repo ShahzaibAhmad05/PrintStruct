@@ -68,7 +68,7 @@ def main() -> None:
         run_tree_mode(config, roots, output_buffer, logger, selected_files_map)
 
 
-    # print the output only if not in no-output mode
+    # print the export only if not in no-export mode
     output_value_exists = not output_buffer.empty()
     if not no_output_mode and output_value_exists:
         output_buffer.flush()

@@ -3,7 +3,7 @@ from typing import List, Optional, Tuple
 from pathlib import Path
 from ..utilities.gitignore import GitIgnoreMatcher
 from ..utilities.utils import iter_dir, matches_extra, matches_file_type
-from ..utilities.logger import Logger, OutputBuffer
+from ..utilities.logger import Logger, ExportBuffer
 import pathspec
 
 
@@ -11,7 +11,7 @@ def list_entries(
     directory: Path,
     *,
     root: Path,
-    output_buffer: OutputBuffer,
+    output_buffer: ExportBuffer,
     logger: Logger,
     gi: GitIgnoreMatcher,
     spec: pathspec.PathSpec,
@@ -32,7 +32,7 @@ def list_entries(
     Args:
         directory (Path): Directory to list entries from
         root (Path): Root directory for relative path calculations
-        output_buffer (OutputBuffer): Buffer to write output to
+        output_buffer (ExportBuffer): Buffer to write export to
         logger (Logger): Logger instance for logging
         gi (GitIgnoreMatcher): GitIgnore matcher instance
         spec (pathspec.PathSpec): Pathspec for gitignore patterns

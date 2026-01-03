@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 from ..utilities.gitignore import GitIgnoreMatcher
 from ..utilities.utils import read_file_contents, get_language_hint
-from ..utilities.logger import Logger, OutputBuffer
+from ..utilities.logger import Logger, ExportBuffer
 from .list_enteries import list_entries
 from ..constants.constant import (BRANCH, LAST, SPACE, VERT,
                                   FILE_EMOJI, EMPTY_DIR_EMOJI,
@@ -15,7 +15,7 @@ import pathspec
 def build_tree_data(
     *,
     root: Path,
-    output_buffer: OutputBuffer,
+    output_buffer: ExportBuffer,
     logger: Logger,
     depth: Optional[int],
     show_all: bool,
@@ -229,21 +229,21 @@ def format_text_tree(tree_data: Dict[str, Any], emoji: bool = False, include_con
                 rec(child, next_prefix)
 
     rec(tree_data, "")
-    tree_output = "\n".join(lines)
+    tree_export = "\n".join(lines)
 
     # Append file contents if requested
     if include_contents and file_contents_list:
-        tree_output += "\n\n" + "=" * 80 + "\n"
-        tree_output += "FILE CONTENTS\n"
-        tree_output += "=" * 80 + "\n\n"
+        tree_export += "\n\n" + "=" * 80 + "\n"
+        tree_export += "FILE CONTENTS\n"
+        tree_export += "=" * 80 + "\n\n"
 
         for item in file_contents_list:
-            tree_output += f"File: {item['path']}\n"
-            tree_output += "-" * 80 + "\n"
-            tree_output += item['contents']
-            tree_output += "\n" + "-" * 80 + "\n\n"
+            tree_export += f"File: {item['path']}\n"
+            tree_export += "-" * 80 + "\n"
+            tree_export += item['contents']
+            tree_export += "\n" + "-" * 80 + "\n\n"
 
-    return tree_output
+    return tree_export
 
 
 def format_markdown_tree(tree_data: Dict[str, Any], emoji: bool = False, include_contents: bool = False) -> str:
@@ -298,31 +298,31 @@ def format_markdown_tree(tree_data: Dict[str, Any], emoji: bool = False, include
 
     rec(tree_data, "")
 
-    # Build markdown output
-    md_output = "```\n"
-    md_output += "\n".join(lines)
-    md_output += "\n```\n"
+    # Build markdown export
+    md_export = "```\n"
+    md_export += "\n".join(lines)
+    md_export += "\n```\n"
 
     # Append file contents in code blocks if requested
     if include_contents and file_contents_list:
-        md_output += "\n## File Contents\n\n"
+        md_export += "\n## File Contents\n\n"
 
         for item in file_contents_list:
             # Get language hint for syntax highlighting
             lang_hint = get_language_hint(Path(item['name']))
 
-            md_output += f"### {item['path']}\n\n"
-            md_output += f"```{lang_hint}\n"
-            md_output += item['contents']
-            md_output += "\n```\n\n"
+            md_export += f"### {item['path']}\n\n"
+            md_export += f"```{lang_hint}\n"
+            md_export += item['contents']
+            md_export += "\n```\n\n"
 
-    return md_output
+    return md_export
 
 
-def write_outputs(
+def write_exports(
     logger: Logger,
     tree_data: Dict[str, Any],
-    output_path: str,
+    export_path: str,
     md: bool=False,
     json: bool=False,
     txt: bool=False,
@@ -330,29 +330,29 @@ def write_outputs(
     include_contents: bool = True
 ) -> None:
     """
-    Write tree data to multiple output files simultaneously.
+    Write tree data to multiple export files simultaneously.
 
     Args:
         tree_data: Hierarchical tree structure
-        json_path: Path to JSON output file (if None, skip)
-        txt_path: Path to TXT output file (if None, skip)
-        md_path: Path to Markdown output file (if None, skip)
+        json_path: Path to JSON export file (if None, skip)
+        txt_path: Path to TXT export file (if None, skip)
+        md_path: Path to Markdown export file (if None, skip)
         emoji: Emoji flag for text formatting
-        include_contents: If True, include file contents in outputs (default: True)
+        include_contents: If True, include file contents in exports (default: True)
     """
     if md: func = format_markdown_tree
     elif json: func = format_json
     elif txt: func = format_text_tree
 
     try:
-        if output_path:
+        if export_path:
             content = func(tree_data)
-            with open(output_path, 'w', encoding='utf-8') as f:
+            with open(export_path, 'w', encoding='utf-8') as f:
                 f.write(content)
 
     except IOError as e:
-        logger.log(Logger.ERROR, f"Error writing output file: {e}")
+        logger.log(Logger.ERROR, f"Error writing export file: {e}")
         raise
     except Exception as e:
-        logger.log(Logger.ERROR, f"Unexpected error during file output: {e}")
+        logger.log(Logger.ERROR, f"Unexpected error during file export: {e}")
         raise
