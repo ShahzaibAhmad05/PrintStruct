@@ -142,10 +142,10 @@ class ParsingService:
             default=argparse.SUPPRESS, help="Don't include file contents")
         io.add_argument("--no-contents-for", nargs="+", default=[], 
             metavar="PATH", help="Exclude contents for specific files")
-        io.add_argument("--overrride-files", action="store_true", 
-            default=argparse.SUPPRESS, help="Override existing files")  # <-- triple r
+        io.add_argument("--override-files", action="store_true", 
+            default=argparse.SUPPRESS, help="Override existing files")
         io.add_argument("-o", "--export", 
-            default=argparse.SUPPRESS, help="Save tree structure to file")
+            default=None, help="Save tree structure to file")
 
 
     def _add_listing_flags(self, ap: argparse.ArgumentParser):
