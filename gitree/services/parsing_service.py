@@ -8,7 +8,7 @@ from ..objects.config import Config
 
 class ParsingService:
     """
-    CLI parsing service for gitree tool.
+    CLI parsing service for gitree tool. 
     Wraps argument parsing and validation into a class.
     """
 
@@ -26,12 +26,12 @@ class ParsingService:
     # Public method to parse args
     # ------------------------------
 
-    def parse_args(self) -> argparse.Namespace:
+    def parse_args(self) -> Config:
         """
         Parse command-line arguments for the gitree tool.
 
         Returns:
-            argparse.Namespace: Parsed command-line arguments containing all configuration options
+            config (Config): Configuration object storing information for args
         """
         ap = argparse.ArgumentParser(
             description="Print a directory tree (respects .gitignore).",
