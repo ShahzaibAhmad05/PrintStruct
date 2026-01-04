@@ -1,9 +1,13 @@
-printstruct.egg-info
-*.egg-info/
-__pycache__/
-myenv/
-venv/
-.env/
-.vscode/
-.venv/
-.idea/*
+# temporary files/cache
+*.egg-info
+__pycache__
+
+# environment vars
+myenv
+venv
+.env
+
+# IDE stuff
+.vscode
+.venv
+.idea
