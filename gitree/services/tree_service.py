@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List, Optional, Set
 from ..utilities.gitignore import GitIgnoreMatcher
 from .list_enteries import list_entries
-from ..utilities.logger import Logger, ExportBuffer
+from ..utilities.logger import Logger, OutputBuffer
 from ..utilities.utils import copy_to_clipboard
 from ..constants.constant import (BRANCH, LAST, SPACE, VERT,
                                   FILE_EMOJI, EMPTY_DIR_EMOJI,
@@ -18,7 +18,7 @@ from collections import defaultdict
 def draw_tree(
     *,
     root: Path,
-    output_buffer: ExportBuffer,
+    output_buffer: OutputBuffer,
     logger: Logger,
     depth: Optional[int],
     show_all: bool,
