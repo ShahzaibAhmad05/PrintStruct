@@ -58,6 +58,15 @@ class ParsingService:
         # Prepare the config object to return from this function
         config = Config(ctx, args)
         config.no_printing = config.copy or config.export or config.zip 
+        return ParsingService._fix_contradicting_args(ctx, config)
+    
+
+    @staticmethod
+    def _fix_contradicting_args(ctx: AppContext, config: Config) -> Config:
+        """
+        Prevents unexpected behaviour of the tool if contradictory options are used
+        """
+        # TODO: Implement this function
         return config
 
     
