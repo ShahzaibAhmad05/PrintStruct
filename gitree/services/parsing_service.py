@@ -5,107 +5,105 @@ Code file for housing ParsingService class. Includes arguments adding,
 correction, and processing for argparse.
 """
 
+# Default libs
 import argparse
+
+# Dependencies
 from pathlib import Path
+
+# Imports from this project
 from ..utilities.utils import max_items_int, max_entries_int
-from ..utilities.logger import Logger, OutputBuffer
 from ..objects.config import Config
+from ..objects.app_context import AppContext
 
 
 class ParsingService:
     """
     CLI parsing service for gitree tool. 
-    Wraps argument parsing and validation into a class.
+
+    Wraps argument parsing and validation into a class. Call parse_args
+    to get a Config object.
     """
 
-    def __init__(self, *, logger: Logger, output_buffer: OutputBuffer):
+    @staticmethod
+    def parse_args(ctx: AppContext) -> Config:
         """
-        Initialize the parsing service.
-
-        Args:
-            logger: Optional logger instance for debug/info messages
-        """
-        self.logger = logger
-        self.output_buffer = output_buffer
-
-    # ------------------------------
-    # Public method to parse args
-    # ------------------------------
-
-    def parse_args(self) -> Config:
-        """
-        Parse command-line arguments for the gitree tool.
+        Public function to parse command-line arguments for the gitree tool.
 
         Returns:
-            config (Config): Configuration object storing information for args
+            Config: Configuration object to be used in-place of args
         """
+
         ap = argparse.ArgumentParser(
             description="Print a directory tree (respects .gitignore).",
             formatter_class=argparse.RawTextHelpFormatter,
-            epilog=self._examples_text()
+            epilog=ParsingService._examples_text()
         )
 
-        self._add_positional_args(ap)
-        self._add_general_options(ap)
-        self._add_io_flags(ap)
-        self._add_listing_flags(ap)
-        self._add_listing_control_flags(ap)
+        ParsingService._add_positional_args(ctx, ap)
+        ParsingService._add_general_options(ctx, ap)
+        ParsingService._add_io_flags(ctx, ap)
+        ParsingService._add_listing_flags(ctx, ap)
+        ParsingService._add_listing_control_flags(ctx, ap)
 
         args = ap.parse_args()
-        if self.logger:
-            self.logger(Logger.DEBUG, "Parsed arguments: %s", args)
+        ctx.logger.log(ctx.logger.DEBUG, f"Parsed arguments: {args}")
+
 
         # Correct the arguments before returning to avoid complexity
-        # in implementation in main function
-        args = self._correct_args(args)
-        return Config(args)
+        # in implementation in main function, then return a Config object
+        args = ParsingService._correct_args(ctx, args)
 
-    # -------------------------
-    # Private helper methods
-    # -------------------------
 
-    def _correct_args(self, args: argparse.Namespace) -> argparse.Namespace:
+        # Prepare the config object to return from this function
+        config = Config(ctx, args)
+        config.no_printing = config.copy or config.export or config.zip 
+        return config
+
+    
+    @staticmethod
+    def _correct_args(ctx: AppContext, args: argparse.Namespace) -> argparse.Namespace:
         """
         Correct and validate CLI arguments in place.
         """
-        # Change 'output' to 'export' here
+        
         if getattr(args, "export", None) is not None:
-            args.export = self._fix_output_path(
-                args.export,
+            args.export = ParsingService._fix_output_path(
+                ctx, args.export,
                 default_extensions={"txt": ".txt", "json": ".json", "md": ".md"},
                 format_str=args.format
             )
-        if getattr(args, "zip", None) is not None:
-            args.zip = self._fix_output_path(args.zip, default_extension=".zip")
 
-        if self.logger:
-            self.logger.debug("Corrected arguments: %s", args)
+        if getattr(args, "zip", None) is not None:
+            args.zip = ParsingService._fix_output_path(ctx, args.zip, default_extension=".zip")
+
+        ctx.logger.log(ctx.logger.DEBUG, f"Corrected arguments: {args}")
+
         return args
     
 
-    def _fix_output_path(
-        self,
-        output_path: str,
-        default_extension: str = "",
-        default_extensions: dict | None = None,
-        format_str: str = ""
-    ) -> str:
+    @staticmethod
+    def _fix_output_path(ctx: AppContext, output_path: str, default_extension: str = "",
+        default_extensions: dict | None = None, format_str: str = "") -> str:
         """
         Ensure the output path has a correct extension.
         """
+        
         default_extensions = default_extensions or {}
         path = Path(output_path)
 
         if path.suffix == "":
             if default_extension:
                 path = path.with_suffix(default_extension)
+
             elif format_str and format_str in default_extensions:
                 path = path.with_suffix(default_extensions[format_str])
 
         return str(path)
     
 
-    def _examples_text(self) -> str:
+    @staticmethod
+    def _examples_text() -> str:
         return """
             Examples:
             gitree
@@ -122,10 +120,11 @@ class ParsingService:
 
             gitree --zip project.zip src/
                 Create a zip archive from src directory
-            """.strip()
+        """.strip()
 
 
-    def _add_positional_args(self, ap: argparse.ArgumentParser):
+    @staticmethod
+    def _add_positional_args(ctx: AppContext, ap: argparse.ArgumentParser):
         ap.add_argument(
             "paths",
             nargs="*",
@@ -134,7 +133,8 @@ class ParsingService:
         )
 
 
-    def _add_general_options(self, ap: argparse.ArgumentParser):
+    @staticmethod
+    def _add_general_options(ctx: AppContext, ap: argparse.ArgumentParser):
         basic = ap.add_argument_group("general options")
         basic.add_argument("-v", "--version", action="store_true", 
             default=argparse.SUPPRESS, help="Display the version of the tool")
@@ -148,7 +148,8 @@ class ParsingService:
             default=argparse.SUPPRESS, help="Enable verbose output")
 
 
-    def _add_io_flags(self, ap: argparse.ArgumentParser):
+    @staticmethod
+    def _add_io_flags(ctx: AppContext, ap: argparse.ArgumentParser):
         io = ap.add_argument_group("output & export options")
 
         io.add_argument("-z", "--zip", 
@@ -157,7 +158,8 @@ class ParsingService:
             default=argparse.SUPPRESS, help="Save tree structure to file")
 
 
-    def _add_listing_flags(self, ap: argparse.ArgumentParser):
+    @staticmethod
+    def _add_listing_flags(ctx: AppContext, ap: argparse.ArgumentParser):
         listing = ap.add_argument_group("listing options")
 
         listing.add_argument("--format", choices=["txt", "json", "md"], 
@@ -203,7 +205,8 @@ class ParsingService:
             default=argparse.SUPPRESS, help="Override existing files") 
 
 
-    def _add_listing_control_flags(self, ap: argparse.ArgumentParser):
+    @staticmethod
+    def _add_listing_control_flags(ctx: AppContext, ap: argparse.ArgumentParser):
         listing_control = ap.add_argument_group("listing override options")
 
         listing_control.add_argument("--no-max-entries", action="store_true", 

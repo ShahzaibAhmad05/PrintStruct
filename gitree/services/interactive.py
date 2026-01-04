@@ -1,4 +1,5 @@
 # gitree/services/interactive.py
+
 """
 Interactive file selection UI for gitree.
 
@@ -31,23 +32,12 @@ from ..utilities.gitignore import GitIgnoreMatcher
 from ..utilities.utils import matches_file_type
 from ..utilities.logger import Logger, OutputBuffer
 from ..services.list_enteries import list_entries
+from ..objects.app_context import AppContext
+from ..objects.config import Config
 import pathspec
-import argparse
 
 
-def select_files(
-    *,
-    root: Path,
-    output_buffer: OutputBuffer,
-    logger: Logger,
-    respect_gitignore: bool = True,
-    gitignore_depth: int = None,
-    extra_excludes: List[str] = None,
-    include_patterns: List[str] = None,
-    exclude_patterns: List[str] = None,
-    include_file_types: List[str] = None,
-    files_first: bool = False,
-) -> Set[str]:
+def select_files(ctx: AppContext, config: Config, root: Path) -> Set[str]:
     """
     Launch an interactive terminal UI for selecting files under a root directory.
 
@@ -62,12 +52,11 @@ def select_files(
         A set of absolute file paths selected by the user.
     """
 
-    gi = GitIgnoreMatcher(root, enabled=respect_gitignore, gitignore_depth=gitignore_depth)
-    extra_excludes = (extra_excludes or []) + (exclude_patterns or [])
+    gi = GitIgnoreMatcher(root, enabled=not config.no_gitignore, 
+        gitignore_depth=config.gitignore_depth)
+    
 
-    include_spec = None
-    if include_patterns:
-        include_spec = pathspec.PathSpec.from_lines("gitwildmatch", include_patterns)
+    include_spec = pathspec.PathSpec.from_lines("gitwildmatch", config.include)
 
     # Flat list representing the tree in render order
     tree: List[dict] = []
@@ -87,7 +76,7 @@ def select_files(
         - Applies include/exclude filters
         - Records directory and file relationships for recursive selection
         """
-        if respect_gitignore and gi.within_depth(dirpath):
+        if not config.no_gitignore and gi.within_depth(dirpath):
             gi_path = dirpath / ".gitignore"
             if gi_path.is_file():
                 rel_dir = dirpath.relative_to(root).as_posix()
@@ -106,12 +95,12 @@ def select_files(
         entries, _ = list_entries(
             dirpath,
             root=root,
-            output_buffer=output_buffer,
-            logger=logger,
+            output_buffer=ctx.output_buffer,
+            logger=ctx.logger,
             gi=gi,
             spec=spec,
             show_all=False,
-            extra_excludes=extra_excludes,
+            extra_excludes=config.exclude,
             max_items=None,
             exclude_depth=None,
             no_files=False,
@@ -135,12 +124,12 @@ def select_files(
             else:
                 rel_path = entry.relative_to(root).as_posix()
 
-                if include_spec or include_file_types:
+                if include_spec or config.include_file_types:
                     ok = False
                     if include_spec and include_spec.match_file(rel_path):
                         ok = True
-                    if not ok and include_file_types:
-                        ok = matches_file_type(entry, include_file_types)
+                    if not ok and config.include_file_types:
+                        ok = matches_file_type(entry, config.include_file_types)
                     if not ok:
                         continue
 
@@ -279,13 +268,7 @@ def select_files(
     }
 
 
-def get_interactive_file_selection(
-    *,
-    roots: List[Path],
-    output_buffer: OutputBuffer,
-    logger: Logger,
-    args: argparse.Namespace,
-) -> dict:
+def get_interactive_file_selection(ctx: AppContext, roots: List[Path], config: Config) -> dict:
     """
     Run the interactive file selection UI for one or more root directories.
 
@@ -299,17 +282,7 @@ def get_interactive_file_selection(
     selected_files_map = {}
 
     for root in roots:
-        selected = select_files(
-            root=root,
-            output_buffer=output_buffer,
-            logger=logger,
-            respect_gitignore=not args.no_gitignore,
-            gitignore_depth=args.gitignore_depth,
-            extra_excludes=args.exclude,
-            exclude_patterns=args.exclude,
-            include_patterns=args.include,
-            include_file_types=args.include_file_types,
-        )
+        selected = select_files(ctx, config, root)
         if selected:
             selected_files_map[root] = selected
 

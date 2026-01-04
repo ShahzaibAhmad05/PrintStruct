@@ -6,8 +6,8 @@ import subprocess
 import platform
 from pathlib import Path
 from typing import Dict, Any, Optional
-import argparse
 from ..utilities.logger import Logger  
+from ..objects.app_context import AppContext
 
 
 def get_config_path() -> Path:
@@ -17,7 +17,7 @@ def get_config_path() -> Path:
     return Path("config.json")
 
 
-def get_default_config() -> Dict[str, Any]:
+def get_default_config() -> dict[str, Any]:
     """
     Returns the default configuration values.
     """
@@ -59,7 +59,7 @@ def get_default_config() -> Dict[str, Any]:
     }
 
 
-def validate_config(logger: Logger, config: Dict[str, Any]) -> None:
+def validate_config(ctx: AppContext, config: Dict[str, Any]) -> None:
     """
     Validates the configuration values.
     Exits with error if validation fails.
@@ -78,49 +78,50 @@ def validate_config(logger: Logger, config: Dict[str, Any]) -> None:
             if key in optional_int_keys or key in ["depth", "gitignore_depth", "exclude_depth"]:
                 continue
             else:
-                logger.log(Logger.ERROR, 
+                ctx.logger.log(ctx.logger.ERROR, 
                     f"key '{key}' cannot be null in config.json")
 
         # Type checking based on key
         if key == "max_items":
             if not isinstance(value, int):
-                logger.log(Logger.ERROR, 
+                ctx.logger.log(ctx.logger.ERROR, 
                     f"key 'max_items' must be int, got {type(value).__name__} in config.json")
             if value < 1 or value > 10000:
-                logger.log(Logger.ERROR, 
+                ctx.logger.log(Logger.ERROR, 
                     "key 'max_items' must be between 1 and 10000, got {value} in config.json")
 
         elif key == "max_entries":
             if not isinstance(value, int):
-                logger.log(Logger.ERROR, 
+                ctx.logger.log(Logger.ERROR, 
                     f"key 'max_entries' must be int, got {type(value).__name__} in config.json")
             if value < 1:
-                logger.log(Logger.ERROR, 
+                ctx.logger.log(Logger.ERROR, 
                     f"key 'max_entries' must be positive, got {value} in config.json")
 
         elif key in optional_int_keys:
             if not isinstance(value, int):
-                logger.log(Logger.ERROR, 
+                ctx.logger.log(Logger.ERROR, 
                     f"key '{key}' must be int or null, got {type(value).__name__} in config.json")
             if value < 0:
-                logger.log(Logger.ERROR, 
+                ctx.logger.log(Logger.ERROR, 
                     f"Error: '{key}' cannot be negative, got {value} in config.json")
 
         elif key in ["emoji", "show_all", "no_color", "no_gitignore", "no_files", "no_limit", "summary"]:
             if not isinstance(value, bool):
-                logger.log(Logger.ERROR,
+                ctx.logger.log(Logger.ERROR,
                     f"Error: '{key}' must be boolean (true/false), got {type(value).__name__} in config.json")
         else:
-            logger.log(Logger.ERROR, 
+            ctx.logger.log(Logger.ERROR, 
                 f"Error: Unknown configuration key '{key}' in config.json")
 
 
-def load_user_config(logger: Logger) -> Optional[Dict[str, Any]]:
+def load_user_config(ctx: AppContext) -> dict[str, Any] | None:
     """
     Loads configuration from config.json if it exists.
     Returns None if file doesn't exist.
     Exits with error if file is invalid.
     """
+
     config_path = get_config_path()
 
     if not config_path.exists():
@@ -131,27 +132,27 @@ def load_user_config(logger: Logger) -> Optional[Dict[str, Any]]:
             config = json.load(f)
 
     except json.JSONDecodeError as e:
-        logger.log(Logger.ERROR, 
+        ctx.logger.log(Logger.ERROR, 
             f"invalid JSON in config.json at line {e.lineno}, column {e.colno}")
-        logger.log(Logger.ERROR, f"  {e.msg}")
+        ctx.logger.log(Logger.ERROR, f"  {e.msg}")
 
     except Exception as e:
-        logger.log(Logger.ERROR, f"Error: Could not read config.json: {e}")
+        ctx.logger.log(Logger.ERROR, f"Error: Could not read config.json: {e}")
 
     # Validate the config
-    validate_config(logger, config)
+    validate_config(ctx, config)
 
     return config
 
 
-def create_default_config(logger: Logger) -> None:
+def create_default_config(ctx: AppContext) -> None:
     """
     Creates a default config.json file with all defaults and comments.
     """
     config_path = get_config_path()
 
     if config_path.exists():
-        logger.log(Logger.WARNING, f"config.json already exists at {config_path.absolute()}")
+        ctx.logger.log(Logger.WARNING, f"config.json already exists at {config_path.absolute()}")
         return
 
     # Create config with comments (as a formatted string)
@@ -163,13 +164,13 @@ def create_default_config(logger: Logger) -> None:
             json.dump(config, f, indent=2, ensure_ascii=False)
             f.write('\n')
 
-        logger.log(Logger.DEBUG, f"Created config.json at {config_path.absolute()}")
-        logger.log(Logger.DEBUG, "Edit this file to customize default settings for this project.")
+        ctx.logger.log(Logger.DEBUG, f"Created config.json at {config_path.absolute()}")
+        ctx.logger.log(Logger.DEBUG, "Edit this file to customize default settings for this project.")
     except Exception as e:
-        logger.log(Logger.ERROR, f"Could not create config.json: {e}", file=sys.stderr)
+        ctx.logger.log(Logger.ERROR, f"Could not create config.json: {e}", file=sys.stderr)
 
 
-def open_config_in_editor(logger: Logger) -> None:
+def open_config_in_editor(ctx: AppContext) -> None:
     """
     Opens config.json in the default text editor.
     """
@@ -177,8 +178,8 @@ def open_config_in_editor(logger: Logger) -> None:
 
     # Create config if it doesn't exist
     if not config_path.exists():
-        logger.log(Logger.INFO, f"config.json not found. Creating default config...")
-        create_default_config(logger=logger)
+        ctx.logger.log(Logger.INFO, f"config.json not found. Creating default config...")
+        create_default_config(ctx)
 
     # Try to get editor from environment variable first
     editor = os.environ.get('EDITOR') or os.environ.get('VISUAL')
@@ -211,7 +212,7 @@ def open_config_in_editor(logger: Logger) -> None:
                 raise Exception(f"Unsupported platform: {system}")
 
     except Exception as e:
-        logger.log(Logger.ERROR, f"Could not open editor: {e}")
-        logger.log(Logger.ERROR, f"Please manually open: {config_path.absolute()}")
-        logger.log(Logger.ERROR, 
+        ctx.logger.log(Logger.ERROR, f"Could not open editor: {e}")
+        ctx.logger.log(Logger.ERROR, f"Please manually open: {config_path.absolute()}")
+        ctx.logger.log(Logger.ERROR, 
             f"Or set your EDITOR environment variable to your preferred editor.")

@@ -14,6 +14,9 @@ from .tree_formatting_service import write_exports, build_tree_data, format_mark
 import pathspec
 from collections import defaultdict
 
+from ..objects.config import Config
+from ..objects.app_context import AppContext
+
 
 def draw_tree(
     *,
@@ -219,10 +222,9 @@ def draw_tree(
 
 
 def run_tree_mode(
-    args,
+    ctx: AppContext,
+    config: Config,
     roots: List[Path],
-    output_buffer,
-    logger,
     selected_files_map: Optional[dict] = None
 ) -> None:
     """
@@ -236,126 +238,125 @@ def run_tree_mode(
         # Add header for multiple paths
         if len(roots) > 1:
             if i > 0:
-                output_buffer.write("")  # Empty line between trees
-            output_buffer.write(str(root))
+                ctx.output_buffer.write("")  # Empty line between trees
+            ctx.output_buffer.write(str(root))
 
         # Determine max_entries based on flags
-        max_entries = args.max_entries
-        if args.no_max_entries:
+        max_entries = config.max_entries
+        if config.no_max_entries:
             max_entries = None
 
         draw_tree(
             root=root,
-            output_buffer=output_buffer,
-            logger=logger,
-            depth=args.max_depth,
-            show_all=args.hidden_items,
-            extra_excludes=args.exclude,
-            respect_gitignore=not args.no_gitignore,
-            gitignore_depth=args.gitignore_depth,
-            max_items=args.max_items,
+            output_buffer=ctx.output_buffer,
+            logger=ctx.logger,
+            depth=config.max_depth,
+            show_all=config.hidden_items,
+            extra_excludes=config.exclude,
+            respect_gitignore=not config.no_gitignore,
+            gitignore_depth=config.gitignore_depth,
+            max_items=config.max_items,
             max_entries=max_entries,
-            no_limit=args.no_limit,
-            exclude_depth=args.exclude_depth,
-            no_files=args.no_files,
-            emoji=args.emoji,
-            no_color=args.no_color,
+            no_limit=config.no_limit,
+            exclude_depth=config.exclude_depth,
+            no_files=config.no_files,
+            emoji=config.emoji,
+            no_color=config.no_color,
             whitelist=selected_files,
-            include_patterns=args.include,
-            include_file_types=args.include_file_types,
-            files_first=args.files_first,
+            include_patterns=config.include,
+            include_file_types=config.include_file_types,
+            files_first=config.files_first,
         )
 
     # Write to output file if requested
-    if args.export is not None:
+    if config.export is not None:
         # If format is tree, write whatever was drawn to the buffer.
-        if args.format == "tree":
-            content = output_buffer.get_value()
+        if config.format == "tree":
+            content = ctx.output_buffer.get_value()
 
         else:
             # For json/md we must build structured tree data (not the unicode rendering)
-            include_contents = not args.no_contents
+            include_contents = not config.no_contents
 
             # NOTE: keeps previous behavior: export uses last processed root
             tree_data = build_tree_data(
                 root=root,
-                output_buffer=output_buffer,
-                logger=logger,
-                depth=args.max_depth,
-                show_all=args.hidden_items,
-                extra_excludes=args.exclude,
-                respect_gitignore=not args.no_gitignore,
-                gitignore_depth=args.gitignore_depth,
-                max_items=args.max_items,
-                max_entries=args.max_entries,
-                exclude_depth=args.exclude_depth,
-                no_files=args.no_files,
+                output_buffer=ctx.output_buffer,
+                logger=ctx.logger,
+                depth=config.max_depth,
+                show_all=config.hidden_items,
+                extra_excludes=config.exclude,
+                respect_gitignore=not config.no_gitignore,
+                gitignore_depth=config.gitignore_depth,
+                max_items=config.max_items,
+                max_entries=config.max_entries,
+                exclude_depth=config.exclude_depth,
+                no_files=config.no_files,
                 whitelist=selected_files,
-                include_patterns=args.include,
-                include_file_types=args.include_file_types,
+                include_patterns=config.include,
+                include_file_types=config.include_file_types,
                 include_contents=include_contents,
-                no_contents_for=args.no_contents_for
+                no_contents_for=config.no_contents_for
             )
 
-            if args.format:
-                if args.format == "md":
+            if config.format:
+                if config.format == "md":
                     content = format_markdown_tree(tree_data, include_contents=True)
-                elif args.format == "txt":
+                elif config.format == "txt":
                     content = format_text_tree(tree_data, include_contents=True)
-                elif args.format == "json":
+                elif config.format == "json":
                     content = format_json(tree_data)
             else:
                 # fallback safety
-                content = output_buffer.get_value()
+                content = ctx.output_buffer.get_value()
 
-        with open(args.export, "w", encoding="utf-8") as f:
+        with open(config.export, "w", encoding="utf-8") as f:
             f.write(content)
 
 
-    if args.copy:
+    if config.copy:
         # Copy the formatted Export, not always the unicode tree
-        content_to_copy = output_buffer.get_value()
-        if args.format in ("json", "md"):
+        content_to_copy = ctx.output_buffer.get_value()
+        if config.format in ("json", "md"):
 
-            include_contents = not args.no_contents
+            include_contents = not config.no_contents
 
             tree_data = build_tree_data(
                 root=root,
-                output_buffer=output_buffer,
-                logger=logger,
-                depth=args.max_depth,
-                show_all=args.hidden_items,
-                extra_excludes=args.exclude,
-                respect_gitignore=not args.no_gitignore,
-                gitignore_depth=args.gitignore_depth,
-                max_items=args.max_items,
-                max_entries=args.max_entries,
-                exclude_depth=args.exclude_depth,
-                no_files=args.no_files,
+                output_buffer=ctx.output_buffer,
+                logger=ctx.logger,
+                depth=config.max_depth,
+                show_all=config.hidden_items,
+                extra_excludes=config.exclude,
+                respect_gitignore=not config.no_gitignore,
+                gitignore_depth=config.gitignore_depth,
+                max_items=config.max_items,
+                max_entries=config.max_entries,
+                exclude_depth=config.exclude_depth,
+                no_files=config.no_files,
                 whitelist=selected_files,
-                include_patterns=args.include,
-                include_file_types=args.include_file_types,
+                include_patterns=config.include,
+                include_file_types=config.include_file_types,
                 include_contents=include_contents,
-                no_contents_for=args.no_contents_for
+                no_contents_for=config.no_contents_for
             )
 
-            if args.format == "json":
+            if config.format == "json":
                 content_to_copy = format_json(tree_data)
-            elif args.format == "md":
+            elif config.format == "md":
                 content_to_copy = format_markdown_tree(tree_data, include_contents=include_contents)
-            elif args.format == "txt":
+            elif config.format == "txt":
                 content_to_copy = format_text_tree(tree_data, include_contents=include_contents)
             else:
                 content_to_copy = format_text_tree(tree_data, include_contents=include_contents)
 
 
-
-        if not copy_to_clipboard(content_to_copy, logger=logger):
-            output_buffer.write(
+        if not copy_to_clipboard(content_to_copy, logger=ctx.logger):
+            ctx.output_buffer.write(
                 "Warning: Could not copy to clipboard. "
                 "Please install a clipboard utility (xclip, wl-copy) "
                 "or ensure your environment supports it."
             )
         else:
-            output_buffer.clear()
-            logger.log(logger.INFO, "Tree Export copied to clipboard successfully.")
+            ctx.output_buffer.clear()
+            ctx.logger.log(ctx.logger.INFO, "Tree Export copied to clipboard successfully.")

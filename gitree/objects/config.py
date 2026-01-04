@@ -2,10 +2,12 @@
 import argparse, json, os
 from typing import Any
 
+from .app_context import AppContext
+
 
 class Config:
 
-    def __init__(self, args: argparse.Namespace):
+    def __init__(self, ctx: AppContext, args: argparse.Namespace):
         """ 
         Config declared here from lowest to highest priority.
         Initializer to build four types of config.

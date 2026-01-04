@@ -5,23 +5,19 @@ from ..utilities.logger import Logger, OutputBuffer
 from .list_enteries import list_entries
 import zipfile, pathspec, argparse
 
+from ..objects.config import Config
+from ..objects.app_context import AppContext
+
 
 class ZippingService:
-    def __init__(
-        self,
-        output_buffer: OutputBuffer,
-        logger: Logger,
-        respect_gitignore: bool = True,
-        gitignore_depth: Optional[int] = None,
-        depth: Optional[int] = None,
-        exclude_depth: Optional[int] = None,
-    ):
-        self.output_buffer = output_buffer
-        self.logger = logger
-        self.respect_gitignore = respect_gitignore
-        self.gitignore_depth = gitignore_depth
-        self.depth = depth
-        self.exclude_depth = exclude_depth
+    def __init__(self, ctx: AppContext, config: Config):
+        self.output_buffer = ctx.output_buffer
+        self.logger = ctx.logger
+        self.respect_gitignore = not config.no_gitignore
+        self.gitignore_depth = config.gitignore_depth
+        self.exclude_depth = config.exclude_depth
+        self.depth = config.max_depth
+
 
     def zip_project_to_handle(
         self,
