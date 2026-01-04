@@ -28,9 +28,9 @@ def max_items_int(v: str) -> int:
     return n
 
 
-def max_lines_int(v: str) -> int:
+def max_entries_int(v: str) -> int:
     """
-    Validate and convert max-lines argument to integer.
+    Validate and convert max-entries argument to integer.
 
     Args:
         v (str): String value from command line argument
@@ -44,7 +44,7 @@ def max_lines_int(v: str) -> int:
     n = int(v)
     if n < 1 or n > 10000:
         raise argparse.ArgumentTypeError(
-            "--max-lines must be >= 1 and <=10000"
+            "--max-entries must be >= 1 and <=10000"
         )
     return n
 

@@ -7,16 +7,18 @@ correction, and processing for argparse.
 
 import argparse
 from pathlib import Path
-from ..utilities.utils import max_items_int, max_lines_int
+from ..utilities.utils import max_items_int, max_entries_int
+from ..utilities.logger import Logger, OutputBuffer
+from ..objects.config import Config
 
 
 class ParsingService:
     """
-    CLI parsing service for gitree tool.
+    CLI parsing service for gitree tool. 
     Wraps argument parsing and validation into a class.
     """
 
-    def __init__(self, logger=None):
+    def __init__(self, *, logger: Logger, output_buffer: OutputBuffer):
         """
         Initialize the parsing service.
 
@@ -24,17 +26,18 @@ class ParsingService:
             logger: Optional logger instance for debug/info messages
         """
         self.logger = logger
+        self.output_buffer = output_buffer
 
     # ------------------------------
     # Public method to parse args
     # ------------------------------
 
-    def parse_args(self) -> argparse.Namespace:
+    def parse_args(self) -> Config:
         """
         Parse command-line arguments for the gitree tool.
 
         Returns:
-            argparse.Namespace: Parsed command-line arguments containing all configuration options
+            config (Config): Configuration object storing information for args
         """
         ap = argparse.ArgumentParser(
             description="Print a directory tree (respects .gitignore).",
@@ -44,17 +47,18 @@ class ParsingService:
 
         self._add_positional_args(ap)
         self._add_general_options(ap)
-        self._add_output_and_export_options(ap)
-        self._add_listing_options(ap)
-        self._add_listing_override_flags(ap)
+        self._add_io_flags(ap)
+        self._add_listing_flags(ap)
+        self._add_listing_control_flags(ap)
 
         args = ap.parse_args()
         if self.logger:
-            self.logger.debug("Parsed arguments: %s", args)
+            self.logger(Logger.DEBUG, "Parsed arguments: %s", args)
 
         # Correct the arguments before returning to avoid complexity
         # in implementation in main function
-        return self._correct_args(args)
+        args = self._correct_args(args)
+        return Config(args)
 
     # -------------------------
     # Private helper methods
@@ -64,11 +68,12 @@ class ParsingService:
         """
         Correct and validate CLI arguments in place.
         """
-        if getattr(args, "output", None) is not None:
-            args.output = self._fix_output_path(
-                args.output,
+        # Change 'output' to 'export' here
+        if getattr(args, "export", None) is not None:
+            args.export = self._fix_output_path(
+                args.export,
                 default_extensions={"txt": ".txt", "json": ".json", "md": ".md"},
-                format_str=getattr(args, "format", "")
+                format_str=args.format
             )
         if getattr(args, "zip", None) is not None:
             args.zip = self._fix_output_path(args.zip, default_extension=".zip")
@@ -106,19 +111,16 @@ class ParsingService:
             gitree
                 Print tree of current directory
 
-            gitree -i -c
-                Interactively select files and copy their structure + contents to clipboard
-
             gitree src --max-depth 2
                 Print tree for 'src' directory up to depth 2
 
-            gitree --exclude *.pyc __pycache__
+            gitree . --exclude *.pyc __pycache__
                 Exclude compiled Python files
 
-            gitree --output tree --format json --no-contents
+            gitree --export tree.json --no-contents
                 Export tree as JSON without file contents
 
-            gitree ./src --zip project.zip
+            gitree --zip project.zip src/
                 Create a zip archive from src directory
             """.strip()
 
@@ -134,49 +136,44 @@ class ParsingService:
 
     def _add_general_options(self, ap: argparse.ArgumentParser):
         basic = ap.add_argument_group("general options")
-        basic.add_argument("-v", "--version", action="store_true", help="Display the version of the tool")
-        basic.add_argument("--init-config", action="store_true", help="Create a default config.json file")
-        basic.add_argument("--config-user", action="store_true", help="Open config.json in the default editor")
-        basic.add_argument("--no-config", action="store_true", help="Ignore config.json and use defaults")
-        basic.add_argument("--verbose", action="store_true", default=argparse.SUPPRESS, help="Enable verbose output")
+        basic.add_argument("-v", "--version", action="store_true", 
+            default=argparse.SUPPRESS, help="Display the version of the tool")
+        basic.add_argument("--init-config", action="store_true", 
+            default=argparse.SUPPRESS, help="Create a default config.json file")
+        basic.add_argument("--config-user", action="store_true", 
+            default=argparse.SUPPRESS, help="Open config.json in the default editor")
+        basic.add_argument("--no-config", action="store_true", 
+            default=argparse.SUPPRESS, help="Ignore config.json and use defaults")
+        basic.add_argument("--verbose", action="store_true", 
+            default=argparse.SUPPRESS, help="Enable verbose output")
 
 
-    def _add_output_and_export_options(self, ap: argparse.ArgumentParser):
+    def _add_io_flags(self, ap: argparse.ArgumentParser):
         io = ap.add_argument_group("output & export options")
 
         io.add_argument("-z", "--zip", 
             default=argparse.SUPPRESS, help="Create a zip archive of the given path")
-        io.add_argument("--no-contents", action="store_true", 
-            default=argparse.SUPPRESS, help="Don't include file contents")
-        io.add_argument("--no-contents-for", nargs="+", default=[], 
-            metavar="PATH", help="Exclude contents for specific files")
-        io.add_argument("--overrride-files", action="store_true", 
-            default=argparse.SUPPRESS, help="Override existing files")  # <-- triple r
-        io.add_argument("-o", "--output", 
+        io.add_argument("--export", 
             default=argparse.SUPPRESS, help="Save tree structure to file")
 
 
-    def _add_listing_options(self, ap: argparse.ArgumentParser):
+    def _add_listing_flags(self, ap: argparse.ArgumentParser):
         listing = ap.add_argument_group("listing options")
 
-        listing.add_argument("-c", "--copy", action="store_true", 
-            default=argparse.SUPPRESS, help="Copy output to clipboard")
-        listing.add_argument("-e", "--emoji", action="store_true", 
-            default=argparse.SUPPRESS, help="Show emojis")
-        listing.add_argument("-i", "--interactive", action="store_true", 
-            default=argparse.SUPPRESS, help="Interactive mode")
         listing.add_argument("--format", choices=["txt", "json", "md"], 
-            default="txt", help="Specify the format of the output required")
-        listing.add_argument("--max-depth", type=int, 
-            default=argparse.SUPPRESS, help="Maximum depth to traverse in given path")
+            default="txt", help="Format output only")
+        
         listing.add_argument("--max-items", type=max_items_int, 
             default=argparse.SUPPRESS, help="Limit items per directory")
-        listing.add_argument("--max-lines", type=max_lines_int, 
-            default=argparse.SUPPRESS, help="Limit lines shown in tree output")
-        listing.add_argument("--hidden-items", action="store_true", 
-            default=argparse.SUPPRESS, help="Show hidden files and directories")
+        listing.add_argument("--max-entries", type=max_entries_int, 
+            default=argparse.SUPPRESS, help="Limit entries shown in tree output")
+        listing.add_argument("--max-depth", type=int, 
+            default=argparse.SUPPRESS, help="Maximum depth to traverse")
         listing.add_argument("--gitignore-depth", type=int, 
             default=argparse.SUPPRESS, help="Limit depth for .gitignore processing")
+        
+        listing.add_argument("--hidden-items", action="store_true", 
+            default=argparse.SUPPRESS, help="Show hidden files and directories")
         listing.add_argument("--exclude", nargs="*", 
             default=argparse.SUPPRESS, help="Patterns of files to exclude")
         listing.add_argument("--exclude-depth", type=int, 
@@ -186,18 +183,31 @@ class ParsingService:
         listing.add_argument("--include-file-types", "--include-file-type", nargs="*", 
             default=argparse.SUPPRESS, dest="include_file_types", 
             help="Include files of certain types")
-        listing.add_argument("-s", "--summary", action="store_true", 
-            default=argparse.SUPPRESS, help="Print summary of files/folders")
+        listing.add_argument("-c", "--copy", action="store_true", 
+            default=argparse.SUPPRESS, help="Copy output to clipboard")
+        listing.add_argument("-e", "--emoji", action="store_true", 
+            default=argparse.SUPPRESS, help="Show emojis")
+        listing.add_argument("-i", "--interactive", action="store_true", 
+            default=argparse.SUPPRESS, help="Interactive mode")
+        
         listing.add_argument("--files-first", action="store_true", 
-            default=False, help="Print files before directories")
+            default=argparse.SUPPRESS, help="Print files before directories")
         listing.add_argument("--no-color", action="store_true", 
-            default=argparse.SUPPRESS, help="Disable colored output")
+            default=argparse.SUPPRESS, help="Disable color output")
+        listing.add_argument("--no-contents", action="store_true", 
+            default=argparse.SUPPRESS, help="Don't include file contents")
+        listing.add_argument("--no-contents-for", nargs="+", 
+            default=argparse.SUPPRESS, metavar="PATH", 
+            help="Exclude contents for specific files")
+        listing.add_argument("--overrride-files", action="store_true", 
+            default=argparse.SUPPRESS, help="Override existing files") 
 
 
-    def _add_listing_override_flags(self, ap: argparse.ArgumentParser):
-        listing_control = ap.add_argument_group("listing override flags")
-        listing_control.add_argument("--no-max-lines", action="store_true", 
-            default=argparse.SUPPRESS, help="Disable max lines limit")
+    def _add_listing_control_flags(self, ap: argparse.ArgumentParser):
+        listing_control = ap.add_argument_group("listing override options")
+
+        listing_control.add_argument("--no-max-entries", action="store_true", 
+            default=argparse.SUPPRESS, help="Disable max entries limit")
         listing_control.add_argument("--no-gitignore", action="store_true", 
             default=argparse.SUPPRESS, help="Ignore .gitignore rules")
         listing_control.add_argument("--no-limit", action="store_true", 

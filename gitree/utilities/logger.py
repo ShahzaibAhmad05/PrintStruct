@@ -54,7 +54,7 @@ class Logger:
         
         for message in self._messages:
             print(message)
-        self._messages.clear()
+        self.clear()
 
 
     def clear(self) -> None:
@@ -62,6 +62,10 @@ class Logger:
         Clear all stored messages without printing them.
         """
         self._messages.clear()
+
+    
+    def empty(self) -> bool:
+        return len(self._messages) == 0
 
 
     def __len__(self) -> int:
@@ -98,7 +102,7 @@ class Logger:
         return f"[{self._LEVEL_NAMES[level]}] {message}"
 
 
-class OutputBuffer:
+class OutputBuffer(Logger):
     """
     A custom output buffer to capture stdout writes. A wrapper around Logger.
     """
@@ -106,11 +110,8 @@ class OutputBuffer:
     def __init__(self):
         """
         Initialize the output buffer with a reference to a Logger.
-
-        Args:
-            logger: Logger instance to store output messages
         """
-        self.logger = Logger()
+        super().__init__()
 
 
     def write(self, message: str) -> None:
@@ -120,15 +121,7 @@ class OutputBuffer:
         Args:
             message: The message to write
         """
-        self.logger.log(level=None, message=message)
-
-
-    def flush(self) -> None:
-        """
-        Flush the output buffer.
-        """
-        if self.logger.get_logs():
-            self.logger.flush()
+        super().log(level=None, message=message)
 
 
     def get_value(self) -> List[str]:
@@ -138,12 +131,14 @@ class OutputBuffer:
         Returns:
             str: The contents of the output buffer
         """
-        return "\n".join(self.logger.get_logs())
+        return super().get_logs()
     
 
-    def clear(self) -> None:   
-        """
-        Clear the output buffer.
-        """
-        self.logger.clear()
+    def flush(self) -> None:
+        """ A modification for the parent class flush() function """
+        if super().empty():
+            return      # Do not print anything
+
+        for message in self.get_value():
+            print(message)
     

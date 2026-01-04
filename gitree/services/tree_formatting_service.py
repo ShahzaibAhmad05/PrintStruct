@@ -23,7 +23,7 @@ def build_tree_data(
     respect_gitignore: bool,
     gitignore_depth: Optional[int],
     max_items: Optional[int] = None,
-    max_lines: Optional[int] = None,
+    max_entries: Optional[int] = None,
     exclude_depth: Optional[int] = None,
     no_files: bool = False,
     whitelist: Optional[Set[str]] = None,
@@ -56,12 +56,12 @@ def build_tree_data(
         "children": []
     }
 
-    lines=1 # Count lines for max_lines limit
-    stop_writing=False # Flag to stop writing when max_lines is reached
+    entries=1 # Count lines for max_entries limit
+    stop_writing=False # Flag to stop writing when max_entries is reached
 
     def rec(dirpath: Path, current_depth: int, patterns: List[str]) -> List[Dict[str, Any]]:
         """Recursively build tree data for a directory."""
-        nonlocal lines, stop_writing
+        nonlocal entries, stop_writing
         if depth is not None and current_depth >= depth:
             return []
 
@@ -85,7 +85,7 @@ def build_tree_data(
         spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
 
         # Get entries
-        entries, truncated = list_entries(
+        entry_list, truncated = list_entries(
             dirpath,
             root=root,
             output_buffer=output_buffer,
@@ -95,7 +95,7 @@ def build_tree_data(
             show_all=show_all,
             extra_excludes=extra_excludes,
             max_items=max_items,
-            max_lines=max_lines,
+            max_entries=max_entries,
             exclude_depth=exclude_depth,
             no_files=no_files,
             include_patterns=include_patterns,
@@ -104,7 +104,7 @@ def build_tree_data(
 
         # Filter by whitelist
         filtered_entries = []
-        for entry in entries:
+        for entry in entry_list:
             entry_path = str(entry.absolute())
             if whitelist is not None:
                 if entry.is_file():
@@ -115,17 +115,17 @@ def build_tree_data(
                         continue
             filtered_entries.append(entry)
 
-        entries = filtered_entries
+        entry_list = filtered_entries
 
         # Build children list
         children = []
-        for i, entry in enumerate(entries):
+        for i, entry in enumerate(entry_list):
             if stop_writing:
                 break
 
-            if max_lines is not None and lines >= max_lines:
-                remaining = len(entries) - i + truncated
-                children.append({"name": "... and more lines", "type": "truncated"})
+            if max_entries is not None and entries >= max_entries:
+                remaining = len(entry_list) - i + truncated
+                children.append({"name": "... and more entries", "type": "truncated"})
                 stop_writing = True
                 break
 
@@ -141,10 +141,10 @@ def build_tree_data(
                     file_node["contents"] = read_file_contents(entry)
 
                 children.append(file_node)
-                lines += 1
+                entries += 1
 
             elif entry.is_dir():
-                lines += 1
+                entries += 1
                 child_node = {
                     "name": entry.name,
                     "type": "directory",
@@ -159,7 +159,7 @@ def build_tree_data(
                 "name": f"... and {truncated} more items",
                 "type": "truncated"
             })
-            lines += 1
+            entries += 1
 
         return children
 
@@ -229,21 +229,21 @@ def format_text_tree(tree_data: Dict[str, Any], emoji: bool = False, include_con
                 rec(child, next_prefix)
 
     rec(tree_data, "")
-    tree_output = "\n".join(lines)
+    tree_export = "\n".join(lines)
 
     # Append file contents if requested
     if include_contents and file_contents_list:
-        tree_output += "\n\n" + "=" * 80 + "\n"
-        tree_output += "FILE CONTENTS\n"
-        tree_output += "=" * 80 + "\n\n"
+        tree_export += "\n\n" + "=" * 80 + "\n"
+        tree_export += "FILE CONTENTS\n"
+        tree_export += "=" * 80 + "\n\n"
 
         for item in file_contents_list:
-            tree_output += f"File: {item['path']}\n"
-            tree_output += "-" * 80 + "\n"
-            tree_output += item['contents']
-            tree_output += "\n" + "-" * 80 + "\n\n"
+            tree_export += f"File: {item['path']}\n"
+            tree_export += "-" * 80 + "\n"
+            tree_export += item['contents']
+            tree_export += "\n" + "-" * 80 + "\n\n"
 
-    return tree_output
+    return tree_export
 
 
 def format_markdown_tree(tree_data: Dict[str, Any], emoji: bool = False, include_contents: bool = False) -> str:
@@ -298,31 +298,31 @@ def format_markdown_tree(tree_data: Dict[str, Any], emoji: bool = False, include
 
     rec(tree_data, "")
 
-    # Build markdown output
-    md_output = "```\n"
-    md_output += "\n".join(lines)
-    md_output += "\n```\n"
+    # Build markdown export
+    md_export = "```\n"
+    md_export += "\n".join(lines)
+    md_export += "\n```\n"
 
     # Append file contents in code blocks if requested
     if include_contents and file_contents_list:
-        md_output += "\n## File Contents\n\n"
+        md_export += "\n## File Contents\n\n"
 
         for item in file_contents_list:
             # Get language hint for syntax highlighting
             lang_hint = get_language_hint(Path(item['name']))
 
-            md_output += f"### {item['path']}\n\n"
-            md_output += f"```{lang_hint}\n"
-            md_output += item['contents']
-            md_output += "\n```\n\n"
+            md_export += f"### {item['path']}\n\n"
+            md_export += f"```{lang_hint}\n"
+            md_export += item['contents']
+            md_export += "\n```\n\n"
 
-    return md_output
+    return md_export
 
 
-def write_outputs(
+def write_exports(
     logger: Logger,
     tree_data: Dict[str, Any],
-    output_path: str,
+    export_path: str,
     md: bool=False,
     json: bool=False,
     txt: bool=False,
@@ -330,29 +330,29 @@ def write_outputs(
     include_contents: bool = True
 ) -> None:
     """
-    Write tree data to multiple output files simultaneously.
+    Write tree data to multiple export files simultaneously.
 
     Args:
         tree_data: Hierarchical tree structure
-        json_path: Path to JSON output file (if None, skip)
-        txt_path: Path to TXT output file (if None, skip)
-        md_path: Path to Markdown output file (if None, skip)
+        json_path: Path to JSON export file (if None, skip)
+        txt_path: Path to TXT export file (if None, skip)
+        md_path: Path to Markdown export file (if None, skip)
         emoji: Emoji flag for text formatting
-        include_contents: If True, include file contents in outputs (default: True)
+        include_contents: If True, include file contents in exports (default: True)
     """
     if md: func = format_markdown_tree
     elif json: func = format_json
     elif txt: func = format_text_tree
 
     try:
-        if output_path:
+        if export_path:
             content = func(tree_data)
-            with open(output_path, 'w', encoding='utf-8') as f:
+            with open(export_path, 'w', encoding='utf-8') as f:
                 f.write(content)
 
     except IOError as e:
-        logger.log(Logger.ERROR, f"Error writing output file: {e}")
+        logger.log(Logger.ERROR, f"Error writing export file: {e}")
         raise
     except Exception as e:
-        logger.log(Logger.ERROR, f"Unexpected error during file output: {e}")
+        logger.log(Logger.ERROR, f"Unexpected error during file export: {e}")
         raise

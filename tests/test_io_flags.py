@@ -21,13 +21,13 @@ class TestIOFlags(BaseCLISetup):
             self.assertIn("file.txt", names)
 
 
-    def test_entry_point_output(self):
-        out_path = self.root / "tree_output.txt"
+    def test_entry_point_export(self):
+        out_path = self.root / "tree_export.txt"
 
-        result = self._run_cli("--output", out_path.name)
+        result = self._run_cli("--export", out_path.name)
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
-        self.assertTrue(out_path.exists(), "Output file was not created")
+        self.assertTrue(out_path.exists(), "Export file was not created")
 
         content = out_path.read_text()
         self.assertIn("file.txt", content)
