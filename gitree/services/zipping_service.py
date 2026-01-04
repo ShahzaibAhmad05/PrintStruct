@@ -1,12 +1,24 @@
-from pathlib import Path
-from typing import List, Optional, Set
-from ..utilities.gitignore import GitIgnoreMatcher
-from ..utilities.logger import Logger, OutputBuffer
-from .list_enteries import list_entries
-import zipfile, pathspec, argparse
+# gitree/services/zipping_service.py
 
+"""
+Zipping service class for gitree tool.
+
+The class might be made static after a refactor.
+"""
+
+# Default libs
+from pathlib import Path
+import zipfile, pathspec
+
+# Dependencies
+import argparse
+
+# Deps from this project
+from ..utilities.gitignore import GitIgnoreMatcher
+from ..utilities.logger import Logger
 from ..objects.config import Config
 from ..objects.app_context import AppContext
+from .list_enteries import list_entries
 
 
 class ZippingService:
@@ -17,6 +29,8 @@ class ZippingService:
         self.gitignore_depth = config.gitignore_depth
         self.exclude_depth = config.exclude_depth
         self.depth = config.max_depth
+        self.ctx = ctx
+        self.config = config
 
 
     def zip_project_to_handle(
@@ -26,17 +40,17 @@ class ZippingService:
         *,
         root: Path,
         show_all: bool,
-        extra_excludes: List[str],
+        extra_excludes: list[str],
         no_files: bool = False,
-        whitelist: Optional[Set[str]] = None,
+        whitelist: set[str] | None = None,
         arcname_prefix: str = "",
-        include_patterns: List[str] = None,
-        include_file_types: List[str] = None,
+        include_patterns: list[str] = None,
+        include_file_types: list[str] = None,
     ) -> None:
-        gi = GitIgnoreMatcher(root, enabled=self.respect_gitignore, gitignore_depth=self.gitignore_depth)
+        gi = GitIgnoreMatcher(self.ctx, self.config, root)
         export_zip_resolved = zipPath.resolve()
 
-        def rec(dirpath: Path, rec_depth: int, patterns: List[str]) -> None:
+        def rec(dirpath: Path, rec_depth: int, patterns: list[str]) -> None:
             if self.depth is not None and rec_depth >= self.depth:
                 return
 
@@ -56,21 +70,7 @@ class ZippingService:
 
             spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
 
-            entries, _ = list_entries(
-                dirpath,
-                root=root,
-                output_buffer=self.output_buffer,
-                logger=self.logger,
-                gi=gi,
-                spec=spec,
-                show_all=show_all,
-                extra_excludes=extra_excludes,
-                max_items=None,
-                exclude_depth=self.exclude_depth,
-                no_files=no_files,
-                include_patterns=include_patterns,
-                include_file_types=include_file_types,
-            )
+            entries, _ = list_entries(self.ctx, self.config, dirpath, root, gi, spec)
 
             for entry in entries:
                 if export_zip_resolved is not None and entry.resolve() == export_zip_resolved:
@@ -106,11 +106,11 @@ class ZippingService:
         *,
         zip_stem: str,
         show_all: bool,
-        extra_excludes: List[str],
+        extra_excludes: list[str],
         no_files: bool = False,
-        whitelist: Optional[Set[str]] = None,
-        include_patterns: List[str] = None,
-        include_file_types: List[str] = None,
+        whitelist: set[str] | None = None,
+        include_patterns: list[str] = None,
+        include_file_types: list[str] = None,
     ) -> None:
         zip_path = Path(f"{zip_stem}.zip").resolve()
         with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as z:
@@ -130,8 +130,8 @@ class ZippingService:
     def zip_roots(
         self,
         args: argparse.Namespace,
-        roots: List[Path],
-        selected_files_map: Optional[dict] = None
+        roots: list[Path],
+        selected_files_map: dict | None = None
     ) -> None:
         zip_path = Path(args.zip).resolve()
         selected_files_map = selected_files_map or {}

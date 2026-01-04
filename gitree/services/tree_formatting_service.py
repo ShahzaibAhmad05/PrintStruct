@@ -1,7 +1,20 @@
 # gitree/services/tree_formatting_service.py
+
+"""
+Tree formatting util functions. 
+
+This file might be removed during refactoring later.
+"""
+
+# Default libs
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
+
+# Dependencies
+import pathspec
+
+# Deps from this project
 from ..utilities.gitignore import GitIgnoreMatcher
 from ..utilities.utils import read_file_contents, get_language_hint
 from ..utilities.logger import Logger, OutputBuffer
@@ -9,29 +22,11 @@ from .list_enteries import list_entries
 from ..constants.constant import (BRANCH, LAST, SPACE, VERT,
                                   FILE_EMOJI, EMPTY_DIR_EMOJI,
                                   NORMAL_DIR_EMOJI)
-import pathspec
+from ..objects.app_context import AppContext
+from ..objects.config import Config
 
 
-def build_tree_data(
-    *,
-    root: Path,
-    output_buffer: OutputBuffer,
-    logger: Logger,
-    depth: Optional[int],
-    show_all: bool,
-    extra_excludes: List[str],
-    respect_gitignore: bool,
-    gitignore_depth: Optional[int],
-    max_items: Optional[int] = None,
-    max_entries: Optional[int] = None,
-    exclude_depth: Optional[int] = None,
-    no_files: bool = False,
-    whitelist: Optional[Set[str]] = None,
-    include_patterns: List[str] = None,
-    include_file_types: List[str] = None,
-    include_contents: bool = True,
-    no_contents_for: Optional[List[Path]] = None
-) -> Dict[str, Any]:
+def build_tree_data(ctx: AppContext, config: Config, root: Path) -> dict[str, Any]:
     """
     Build hierarchical tree structure as dictionary.
 
@@ -41,14 +36,13 @@ def build_tree_data(
     Returns:
         Dict with structure: {"name": str, "type": "file"|"directory", "children": [...], "contents": str (optional)}
     """
-    gi = GitIgnoreMatcher(root, enabled=respect_gitignore, gitignore_depth=gitignore_depth)
 
-    if no_contents_for is None:
-        no_contents_for = []
-    else:
-        # Ensure all paths are resolved
-        no_contents_for = [p.resolve() if isinstance(p, Path) else Path(p).resolve() for p in no_contents_for]
+    gi = GitIgnoreMatcher(ctx, config, root)
 
+
+    # Ensure all paths are resolved
+    config.no_contents_for = [p.resolve() if isinstance(p, Path) 
+        else Path(p).resolve() for p in config.no_contents_for]
 
     tree_root = {
         "name": root.name,
@@ -59,16 +53,19 @@ def build_tree_data(
     entries=1 # Count lines for max_entries limit
     stop_writing=False # Flag to stop writing when max_entries is reached
 
-    def rec(dirpath: Path, current_depth: int, patterns: List[str]) -> List[Dict[str, Any]]:
+
+    def rec(dirpath: Path, current_depth: int, 
+        patterns: list[str]) -> list[dict[str, Any]]:
         """Recursively build tree data for a directory."""
         nonlocal entries, stop_writing
-        if depth is not None and current_depth >= depth:
+
+        if config.max_depth is not None and current_depth >= config.max_depth:
             return []
 
         if stop_writing:
             return []
         # Handle .gitignore patterns
-        if respect_gitignore and gi.within_depth(dirpath):
+        if not config.no_gitignore and gi.within_depth(dirpath):
             gi_path = dirpath / ".gitignore"
             if gi_path.is_file():
                 rel_dir = dirpath.relative_to(root).as_posix()
@@ -85,33 +82,18 @@ def build_tree_data(
         spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
 
         # Get entries
-        entry_list, truncated = list_entries(
-            dirpath,
-            root=root,
-            output_buffer=output_buffer,
-            logger=logger,
-            gi=gi,
-            spec=spec,
-            show_all=show_all,
-            extra_excludes=extra_excludes,
-            max_items=max_items,
-            max_entries=max_entries,
-            exclude_depth=exclude_depth,
-            no_files=no_files,
-            include_patterns=include_patterns,
-            include_file_types=include_file_types,
-        )
+        entry_list, truncated = list_entries(ctx, config, dirpath, root, gi, spec)
 
         # Filter by whitelist
         filtered_entries = []
         for entry in entry_list:
             entry_path = str(entry.absolute())
-            if whitelist is not None:
+            if config.include:
                 if entry.is_file():
-                    if entry_path not in whitelist:
+                    if entry_path not in config.include:
                         continue
                 elif entry.is_dir():
-                    if not any(f.startswith(entry_path) for f in whitelist):
+                    if not any(f.startswith(entry_path) for f in config.include):
                         continue
             filtered_entries.append(entry)
 
@@ -123,7 +105,7 @@ def build_tree_data(
             if stop_writing:
                 break
 
-            if max_entries is not None and entries >= max_entries:
+            if config.max_entries is not None and entries >= config.max_entries:
                 remaining = len(entry_list) - i + truncated
                 children.append({"name": "... and more entries", "type": "truncated"})
                 stop_writing = True
@@ -137,7 +119,7 @@ def build_tree_data(
                 }
 
                 # FIX: only touch file_node inside the file branch
-                if include_contents and entry.resolve() not in no_contents_for:
+                if entry.resolve() not in config.no_contents_for:
                     file_node["contents"] = read_file_contents(entry)
 
                 children.append(file_node)
@@ -169,14 +151,15 @@ def build_tree_data(
     return tree_root
 
 
-def format_json(tree_data: Dict[str, Any]) -> str:
+def format_json(tree_data: dict[str, Any]) -> str:
     """
     Convert tree data to JSON string with proper indentation.
     """
     return json.dumps(tree_data, indent=2, ensure_ascii=False)
 
 
-def format_text_tree(tree_data: Dict[str, Any], emoji: bool = False, include_contents: bool = False) -> str:
+def format_text_tree(tree_data: dict[str, Any], 
+        emoji: bool = False, include_contents: bool = False) -> str:
     """
     Convert tree data to text tree format (ASCII art style).
 
@@ -191,7 +174,7 @@ def format_text_tree(tree_data: Dict[str, Any], emoji: bool = False, include_con
     lines = [tree_data["name"]]
     file_contents_list = []  # Store file paths and contents
 
-    def rec(node: Dict[str, Any], prefix: str) -> None:
+    def rec(node: dict[str, Any], prefix: str) -> None:
         children = node.get("children", [])
         for i, child in enumerate(children):
             is_last = i == len(children) - 1
@@ -246,7 +229,8 @@ def format_text_tree(tree_data: Dict[str, Any], emoji: bool = False, include_con
     return tree_export
 
 
-def format_markdown_tree(tree_data: Dict[str, Any], emoji: bool = False, include_contents: bool = False) -> str:
+def format_markdown_tree(tree_data: dict[str, Any], 
+        emoji: bool = False, include_contents: bool = False) -> str:
     """
     Convert tree data to markdown format with code blocks.
 
@@ -261,7 +245,7 @@ def format_markdown_tree(tree_data: Dict[str, Any], emoji: bool = False, include
     lines = [tree_data["name"]]
     file_contents_list = []  # Store file paths and contents
 
-    def rec(node: Dict[str, Any], prefix: str) -> None:
+    def rec(node: dict[str, Any], prefix: str) -> None:
         children = node.get("children", [])
         for i, child in enumerate(children):
             is_last = i == len(children) - 1
@@ -321,7 +305,7 @@ def format_markdown_tree(tree_data: Dict[str, Any], emoji: bool = False, include
 
 def write_exports(
     logger: Logger,
-    tree_data: Dict[str, Any],
+    tree_data: dict[str, Any],
     export_path: str,
     md: bool=False,
     json: bool=False,

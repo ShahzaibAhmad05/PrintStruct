@@ -285,10 +285,8 @@ In addition to the directory path, the following options are available:
 | `--gitignore-depth [n]` | Control discovery depth for `.gitignore` (e.g., `--gitignore-depth 0`). |
 | `--no-gitignore`        | Ignore all `.gitignore` rules.                                          |
 | `--max-items`           | Limit items per directory (default: 20).                                |
-| `--no-limit`            | Remove per-directory item limit.                                        |
-| `--max-entries`           | Limit entries (default: 40).                                              |
-| `--no-limit`            | Remove per-directory item limit.                                        |
-| `--no-max-entries`        | Disable total entries limit.                                              |
+| `--max-entries`           | Limit entries (default: 40).                                          |
+| `--no-max-entries`        | Disable total entries limit.                                          |
 | `--no-files`            | Show only directories (hide files).                                     |
 | `--emoji`, `-e`         | Use emojis in output.                                                   |
 | `--summary`             | Print file/folder counts per level.                                     |
@@ -307,7 +305,7 @@ In addition to the directory path, the following options are available:
 | `--gitignore-depth [n]` | Control discovery depth for **.gitignore** (e.g., `--gitignore-depth 0`).  |
 | `--no-gitignore`        | Ignore all **.gitignore** rules.                                           |
 | `--max-items`           | Limit **items per directory** (default: 20).                               |
-| `--no-limit`            | Remove per-directory **item limit**.                                       |
+| `--no-max-items`            | Remove per-directory **item limit**.                                       |
 | ` --no-files`           | Show only **directories** (hide files).                                    |
 
 ---

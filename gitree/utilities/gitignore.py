@@ -1,7 +1,21 @@
 # gitree/utilities/gitignore.py
+
+"""
+Code file for housing GitIgnoreMatcher.
+
+Might be turned into a static class during refactoring.
+"""
+
+# Default libs
 from pathlib import Path
-from typing import Optional
+
+# Dependencies
 import pathspec
+
+# Deps from this project
+from ..objects.app_context import AppContext
+from ..objects.config import Config
+
 
 class GitIgnoreMatcher:
     """
@@ -11,7 +25,7 @@ class GitIgnoreMatcher:
     be ignored based on gitignore patterns.
     """
 
-    def __init__(self, root: Path, enabled: bool = True, *, gitignore_depth: Optional[int] = None):
+    def __init__(self, ctx: AppContext, config: Config, root: Path):
         """
         Initialize the GitIgnoreMatcher.
 
@@ -21,8 +35,8 @@ class GitIgnoreMatcher:
             gitignore_depth (Optional[int]): Maximum depth to search for gitignore files. None means unlimited
         """
         self.root = root
-        self.enabled = enabled
-        self.gitignore_depth = gitignore_depth
+        self.enabled = not config.no_gitignore
+        self.gitignore_depth = config.gitignore_depth
 
     def within_depth(self, dirpath: Path) -> bool:
         """
@@ -40,6 +54,7 @@ class GitIgnoreMatcher:
             return len(dirpath.relative_to(self.root).parts) <= self.gitignore_depth
         except Exception:
             return False
+
 
     def is_ignored(self, path: Path, spec: pathspec.PathSpec) -> bool:
         """
@@ -60,3 +75,4 @@ class GitIgnoreMatcher:
         if path.is_dir() and spec.match_file(rel + "/"):
             return True
         return False
+    

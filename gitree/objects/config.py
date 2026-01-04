@@ -1,27 +1,27 @@
 # gitree/objects/config.py
+
+"""
+Code file to house Config class.
+"""
+
+# Default libs
 import argparse, json, os
 from typing import Any
 
+# Deps from this project
 from .app_context import AppContext
 
 
 class Config:
-
     def __init__(self, ctx: AppContext, args: argparse.Namespace):
         """ 
         Config declared here from lowest to highest priority.
         Initializer to build four types of config.
         """
-        self.defaults: dict[str, Any]        
-        self.global_cfg: dict[str, Any]
-        self.user_cfg: dict[str, Any]
-        self.cli: dict[str, Any]             # highest priority
-
-        # Build config for each dict
-        self.defaults = self._build_default_config()
-        self.global_cfg = {}
-        self.user_cfg = self._build_user_config()
-        self.cli = vars(args)
+        self.defaults: dict[str, Any] = self._build_default_config()
+        self.global_cfg: dict[str, Any] = {}
+        self.user_cfg: dict[str, Any] = self._build_user_config()
+        self.cli: dict[str, Any] = vars(args)
 
 
     def _build_user_config(self) -> dict[str, Any]:
@@ -80,9 +80,11 @@ class Config:
             # Listing override options
             "no_gitignore": False,
             "no_files": False,
-            "no_limit": False,
+            "no_max_items": False,
             "no_max_entries": False,
-            "no_printing": False
+
+            # Inner tool behaviour control
+            "no_printing": False  
         }
     
 

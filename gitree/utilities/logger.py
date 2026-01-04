@@ -1,6 +1,8 @@
 # gitree/utilities/logger.py
-import sys
-from typing import List, Literal, Dict
+
+"""
+Code file for housing Logger and OutputBuffer classes.
+"""
 
 
 class Logger:
@@ -22,13 +24,13 @@ class Logger:
         """
         Initialize the logger with an empty message and outputs list.
         """
-        self._LEVEL_NAMES: Dict[int, str] = {
+        self._LEVEL_NAMES: dict[int, str] = {
             10: "DEBUG",
             20: "INFO",
             30: "WARNING",
             40: "ERROR",
         }
-        self._messages: List[str] = []
+        self._messages: list[str] = []
 
 
     def log(self, level: str | None, message: str) -> None:
@@ -78,7 +80,7 @@ class Logger:
         return len(self._messages)
     
 
-    def get_logs(self) -> List[str]:
+    def get_logs(self) -> list[str]:
         """
         Get a copy of the stored messages.
 
@@ -124,7 +126,7 @@ class OutputBuffer(Logger):
         super().log(level=None, message=message)
 
 
-    def get_value(self) -> List[str]:
+    def get_value(self) -> list[str]:
         """
         Get the entire contents of the output buffer as a list of strings.
 

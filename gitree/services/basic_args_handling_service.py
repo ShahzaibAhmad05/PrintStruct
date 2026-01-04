@@ -1,10 +1,20 @@
 # gitree/services/basic_args_handling_service.py
-from ..utilities.config import create_default_config, open_config_in_editor
-from ..objects.app_context import AppContext
-from ..objects.config import Config
+
+"""
+Dump file for functions to handle args initially.
+
+This might be removed/refactored later
+"""
+
+# Default libs
 import argparse, glob, sys
 from pathlib import Path
 from typing import List
+
+# Deps from this project
+from ..utilities.config import create_default_config, open_config_in_editor
+from ..objects.app_context import AppContext
+from ..objects.config import Config
 from gitree import __version__
 
 
@@ -61,12 +71,10 @@ def handle_basic_cli_args(ctx: AppContext, config: Config) -> None:
 
     if config.init_config:
         create_default_config(ctx)
-        config.no_printing = False
-
-    if config.config_user:
+    elif config.config_user:
         open_config_in_editor(ctx)
-        config.no_printing = False
-
-    if config.version:
+    elif config.version:
         print(__version__)
-        config.no_printing = False
+
+    # Set the no_printing var if any were handled
+    config.no_printing = config.init_config or config.config_user or config.version

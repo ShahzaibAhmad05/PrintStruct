@@ -35,8 +35,7 @@ def main() -> None:
 
     # if some specific Basic CLI args given, execute and return
     # Handles for --version, --init-config, --config-user, --no-config
-    if handle_basic_cli_args(ctx, config): 
-        no_output_mode = True
+    handle_basic_cli_args(ctx, config)
 
 
     # Validate and resolve all paths
@@ -46,7 +45,7 @@ def main() -> None:
 
     # Handle interactive selection first
     if config.interactive:        # Get files map from interactive selection
-        selected_files_map = get_interactive_file_selection(ctx, roots, config)
+        selected_files_map = get_interactive_file_selection(ctx, config, roots)
         # Filter roots based on interactive selection
         roots = list(selected_files_map.keys())
 
@@ -57,14 +56,17 @@ def main() -> None:
         zipping_service = ZippingService(ctx, config)
         zipping_service.zip_roots(config, roots, selected_files_map)
 
+
     # else, print the tree normally
     else:       
         run_tree_mode(ctx, config, roots, selected_files_map)
+
 
     # print the export only if not in no-export mode
     output_value_exists = not ctx.output_buffer.empty()
     if not config.no_printing and output_value_exists:
         ctx.output_buffer.flush()
+
 
     # print the log if verbose mode
     if config.verbose:

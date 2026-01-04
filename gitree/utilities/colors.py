@@ -1,4 +1,5 @@
 # gitree/utilities/colors.py
+
 """
 Color utility for terminal output using colorama.
 
@@ -6,10 +7,12 @@ Provides functions to colorize directory tree output with support for:
 - Directories (blue)
 - Files (default/white)
 - Hidden items (cyan)
+
+This code file might be removed along with the coloroma dependency later.
 """
 
+# Dependencies
 from colorama import Fore, Style, init
-import sys
 
 # Initialize colorama for cross-platform support
 # strip=False ensures colors are always included, even when output is redirected

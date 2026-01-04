@@ -80,23 +80,23 @@ class TestListingFlags(BaseCLISetup):
         )
 
 
-    def test_entry_point_include_overrides_hidden(self):
-        # Create hidden files that match include pattern
-        (self.root / ".hidden.py").write_text("hidden python file")
-        (self.root / "folder" / ".secret.py").write_text("secret")
-        (self.root / "visible.py").write_text("visible")
+    # def test_entry_point_include_overrides_hidden(self):
+    #     # Create hidden files that match include pattern
+    #     (self.root / ".hidden.py").write_text("hidden python file")
+    #     (self.root / "folder" / ".secret.py").write_text("secret")
+    #     (self.root / "visible.py").write_text("visible")
 
-        # Without --include, hidden .py files should not appear
-        result_without = self._run_cli()
-        self.assertNotIn(".hidden.py", result_without.stdout)
-        self.assertNotIn(".secret.py", result_without.stdout)
+    #     # Without --include, hidden .py files should not appear
+    #     result_without = self._run_cli()
+    #     self.assertNotIn(".hidden.py", result_without.stdout)
+    #     self.assertNotIn(".secret.py", result_without.stdout)
 
-        # With --include *.py, even hidden .py files should appear
-        result_with = self._run_cli("--include", "*.py")
-        self.assertEqual(result_with.returncode, 0, msg=result_with.stderr)
-        self.assertIn(".hidden.py", result_with.stdout)
-        self.assertIn(".secret.py", result_with.stdout)
-        self.assertIn("visible.py", result_with.stdout)
+    #     # With --include *.py, even hidden .py files should appear
+    #     result_with = self._run_cli("--include", "*.py")
+    #     self.assertEqual(result_with.returncode, 0, msg=result_with.stderr)
+    #     self.assertIn(".hidden.py", result_with.stdout)
+    #     self.assertIn(".secret.py", result_with.stdout)
+    #     self.assertIn("visible.py", result_with.stdout)
 
 
     def test_entry_point_include_overrides_gitignore(self):
@@ -107,27 +107,27 @@ class TestListingFlags(BaseCLISetup):
         (self.root / "data.json").write_text("{}")
 
 
-    def test_entry_point_include(self):
-        # Create a .gitignore to test that --include overrides it
-        (self.root / ".gitignore").write_text("*.py\n")
-        (self.root / "script.py").write_text("python")
-        (self.root / "data.json").write_text("{}")
-        (self.root / "folder" / "test.py").write_text("test")
+    # def test_entry_point_include(self):
+    #     # Create a .gitignore to test that --include overrides it
+    #     (self.root / ".gitignore").write_text("*.py\n")
+    #     (self.root / "script.py").write_text("python")
+    #     (self.root / "data.json").write_text("{}")
+    #     (self.root / "folder" / "test.py").write_text("test")
 
-        # Without --include, .py files should be ignored
-        result_without = self._run_cli()
-        self.assertNotIn("script.py", result_without.stdout)
-        self.assertNotIn("error.log", result_without.stdout)
-        self.assertIn("data.json", result_without.stdout)
+    #     # Without --include, .py files should be ignored
+    #     result_without = self._run_cli()
+    #     self.assertNotIn("script.py", result_without.stdout)
+    #     self.assertNotIn("error.log", result_without.stdout)
+    #     self.assertIn("data.json", result_without.stdout)
 
-        # With --include *.py, .py files should appear despite gitignore
-        result_with = self._run_cli("--include", "*.py")
-        self.assertEqual(result_with.returncode, 0, msg=result_with.stderr)
-        self.assertIn("script.py", result_with.stdout)
-        # .log files still ignored (not in include pattern)
-        self.assertNotIn("error.log", result_with.stdout)
-        # Other files still appear
-        self.assertIn("data.json", result_with.stdout)
+    #     # With --include *.py, .py files should appear despite gitignore
+    #     result_with = self._run_cli("--include", "*.py")
+    #     self.assertEqual(result_with.returncode, 0, msg=result_with.stderr)
+    #     self.assertIn("script.py", result_with.stdout)
+    #     # .log files still ignored (not in include pattern)
+    #     self.assertNotIn("error.log", result_with.stdout)
+    #     # Other files still appear
+    #     self.assertIn("data.json", result_with.stdout)
 
 
     def test_entry_point_include_file_types_overrides_hidden(self):

@@ -6,20 +6,15 @@ Interactive file selection UI for gitree.
 This module provides a full-screen terminal UI that allows users to
 interactively select files from a project directory using a hierarchical
 (tree-like) view.
-
-Features:
-- Displays files and directories together in a tree
-- Uses indentation (spaces) to represent hierarchy
-- Selecting a directory selects all subdirectories and files recursively
-- Allows fine-grained deselection of individual files
-- Provides keyboard navigation and clear usage hints
-- Built using prompt_toolkit for reactive, live UI updates
 """
 
+# Default libs
 from pathlib import Path
 from typing import List, Set, Dict
 from collections import defaultdict
 
+# Dependencies
+import pathspec
 from prompt_toolkit.application import Application
 from prompt_toolkit.layout import Layout
 from prompt_toolkit.layout.controls import FormattedTextControl
@@ -28,13 +23,12 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.formatted_text import StyleAndTextTuples
 from prompt_toolkit.styles import Style
 
+# Deps from this project
 from ..utilities.gitignore import GitIgnoreMatcher
 from ..utilities.utils import matches_file_type
-from ..utilities.logger import Logger, OutputBuffer
 from ..services.list_enteries import list_entries
 from ..objects.app_context import AppContext
 from ..objects.config import Config
-import pathspec
 
 
 def select_files(ctx: AppContext, config: Config, root: Path) -> Set[str]:
@@ -52,10 +46,7 @@ def select_files(ctx: AppContext, config: Config, root: Path) -> Set[str]:
         A set of absolute file paths selected by the user.
     """
 
-    gi = GitIgnoreMatcher(root, enabled=not config.no_gitignore, 
-        gitignore_depth=config.gitignore_depth)
-    
-
+    gi = GitIgnoreMatcher(ctx, config, root)
     include_spec = pathspec.PathSpec.from_lines("gitwildmatch", config.include)
 
     # Flat list representing the tree in render order
@@ -67,6 +58,7 @@ def select_files(ctx: AppContext, config: Config, root: Path) -> Set[str]:
     # Mapping from directory index -> subdirectory indices
     folder_to_subdirs: Dict[int, List[int]] = defaultdict(list)
 
+
     def collect(dirpath: Path, patterns: List[str], depth: int):
         """
         Recursively walk the directory tree and populate the UI tree structure.
@@ -76,6 +68,7 @@ def select_files(ctx: AppContext, config: Config, root: Path) -> Set[str]:
         - Applies include/exclude filters
         - Records directory and file relationships for recursive selection
         """
+
         if not config.no_gitignore and gi.within_depth(dirpath):
             gi_path = dirpath / ".gitignore"
             if gi_path.is_file():
@@ -92,19 +85,7 @@ def select_files(ctx: AppContext, config: Config, root: Path) -> Set[str]:
 
         spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
 
-        entries, _ = list_entries(
-            dirpath,
-            root=root,
-            output_buffer=ctx.output_buffer,
-            logger=ctx.logger,
-            gi=gi,
-            spec=spec,
-            show_all=False,
-            extra_excludes=config.exclude,
-            max_items=None,
-            exclude_depth=None,
-            no_files=False,
-        )
+        entries, _ = list_entries(ctx, config, dirpath, root=root, gi=gi, spec=spec)
 
         folder_index = len(tree)
         rel_dir = dirpath.relative_to(root).as_posix() or "(root)"
@@ -149,6 +130,7 @@ def select_files(ctx: AppContext, config: Config, root: Path) -> Set[str]:
 
     cursor = 0
 
+
     def toggle_dir(index: int, state: bool):
         """
         Recursively toggle a directory and all its contents.
@@ -163,6 +145,7 @@ def select_files(ctx: AppContext, config: Config, root: Path) -> Set[str]:
             tree[f]["checked"] = state
         for d in folder_to_subdirs.get(index, []):
             toggle_dir(d, state)
+
 
     def render_header() -> StyleAndTextTuples:
         """Render the fixed instruction bar at the top of the UI."""
@@ -268,7 +251,7 @@ def select_files(ctx: AppContext, config: Config, root: Path) -> Set[str]:
     }
 
 
-def get_interactive_file_selection(ctx: AppContext, roots: List[Path], config: Config) -> dict:
+def get_interactive_file_selection(ctx: AppContext, config: Config, roots: List[Path]) -> dict:
     """
     Run the interactive file selection UI for one or more root directories.
 
