@@ -18,7 +18,7 @@ from collections import defaultdict
 def draw_tree(
     *,
     root: Path,
-    Export_buffer: ExportBuffer,
+    output_buffer: ExportBuffer,
     logger: Logger,
     depth: Optional[int],
     show_all: bool,
@@ -26,7 +26,7 @@ def draw_tree(
     respect_gitignore: bool,
     gitignore_depth: Optional[int],
     max_items: Optional[int] = None,
-    max_lines: Optional[int] = None,
+    max_entries: Optional[int] = None,
     no_limit: bool = False,
     exclude_depth: Optional[int] = None,
     no_files: bool = False,
@@ -42,7 +42,7 @@ def draw_tree(
 
     Args:
         root (Path): Root directory path to start the tree from
-        Export_buffer (ExportBuffer): Buffer to write Export to
+        output_buffer (OutputBuffer): Buffer to write Export to
         logger (Logger): Logger instance for logging
         depth (Optional[int]): Maximum depth to traverse. None for unlimited
         show_all (bool): If True, include hidden files and directories
@@ -50,7 +50,7 @@ def draw_tree(
         respect_gitignore (bool): If True, respect .gitignore rules
         gitignore_depth (Optional[int]): Maximum depth to search for .gitignore files
         max_items (Optional[int]): Maximum number of items to show per directory
-        max_lines (Optional[int]): Maximum number of lines to show
+        max_entries (Optional[int]): Maximum number of entries to show
         exclude_depth (Optional[int]): Depth limit for exclude patterns
         no_files (bool): If True, only show directories
         emoji (bool): If True, show emoji icons in Export
@@ -64,8 +64,8 @@ def draw_tree(
     """
     gi = GitIgnoreMatcher(root, enabled=respect_gitignore, gitignore_depth=gitignore_depth)
 
-    Export_buffer.write(root.name)
-    lines = 1
+    output_buffer.write(root.name)
+    entries = 1
     truncation_prefix = None
 
     # Track if any files matched include patterns for warning messages
@@ -74,7 +74,7 @@ def draw_tree(
 
     def rec(dirpath: Path, prefix: str, current_depth: int, patterns: List[str]) -> None:
         nonlocal files_matched_include_patterns, files_matched_include_types
-        nonlocal lines, truncation_prefix
+        nonlocal entries, truncation_prefix
         
         if depth is not None and current_depth >= depth:
             return
@@ -95,10 +95,10 @@ def draw_tree(
 
         spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
 
-        entries, truncated = list_entries(
+        entry_list, truncated = list_entries(
             dirpath,
             root=root,
-            export_buffer=Export_buffer,
+            output_buffer=output_buffer,
             logger=logger,
             gi=gi,
             spec=spec,
@@ -116,7 +116,7 @@ def draw_tree(
         # Track if any files matched include patterns
         if include_patterns:
             include_spec_check = pathspec.PathSpec.from_lines("gitwildmatch", include_patterns)
-            for entry in entries:
+            for entry in entry_list:
                 if entry.is_file():
                     rel_path = entry.relative_to(root).as_posix()
                     if include_spec_check.match_file(rel_path):
@@ -125,14 +125,14 @@ def draw_tree(
 
         if include_file_types:
             from ..utilities.utils import matches_file_type
-            for entry in entries:
+            for entry in entry_list:
                 if entry.is_file():
                     if matches_file_type(entry, include_file_types):
                         files_matched_include_types = True
                         break
 
         filtered_entries = []
-        for entry in entries:
+        for entry in entry_list:
             entry_path = str(entry.absolute())
             if whitelist is not None:
                 # If it's a file, it must be in the whitelist
@@ -146,21 +146,21 @@ def draw_tree(
                        continue
             filtered_entries.append(entry)
 
-        entries = filtered_entries
+        entry_list = filtered_entries
 
 
 
-        for i, entry in enumerate(entries):
-            if max_lines is not None and lines >= max_lines:
+        for i, entry in enumerate(entry_list):
+            if max_entries is not None and entries >= max_entries:
                 if truncation_prefix is None:
                     truncation_prefix = prefix
                 
-                lines += 1
+                entries += 1
                 if entry.is_dir():
                     rec(entry, prefix + SPACE, current_depth + 1, patterns)
                 continue
 
-            is_last = i == len(entries) - 1 and truncated == 0
+            is_last = i == len(entry_list) - 1 and truncated == 0
             connector = LAST if is_last else BRANCH
             suffix = "/" if entry.is_dir() else ""
 
@@ -173,7 +173,7 @@ def draw_tree(
                 entry_name = colorize_text(entry_name, is_directory=entry.is_dir(), is_hidden=is_hidden)
 
             if not emoji:
-                Export_buffer.write(prefix + connector + entry_name)
+                output_buffer.write(prefix + connector + entry_name)
             else:
                 if entry.is_file():
                     emoji_str = FILE_EMOJI
@@ -182,23 +182,23 @@ def draw_tree(
                         emoji_str = EMPTY_DIR_EMOJI if (entry.is_dir() and not any(entry.iterdir())) else NORMAL_DIR_EMOJI
                     except PermissionError:
                         emoji_str = NORMAL_DIR_EMOJI
-                Export_buffer.write(prefix + connector + emoji_str + " " + entry.name + suffix)
+                output_buffer.write(prefix + connector + emoji_str + " " + entry.name + suffix)
             
-            lines += 1
+            entries += 1
 
             if entry.is_dir():
                 rec(entry, prefix + (SPACE if is_last else VERT),  current_depth + 1, patterns)
 
         # Show truncation message if items were hidden
         if truncated > 0:
-            if max_lines is not None and lines >= max_lines:
+            if max_entries is not None and entries >= max_entries:
                 if truncation_prefix is None:
                     truncation_prefix = prefix
-                lines += 1
+                entries += 1
             else:
                 # truncation line is always last among displayed items
-                Export_buffer.write(prefix + LAST + f"... and {truncated} more items")
-                lines += 1
+                output_buffer.write(prefix + LAST + f"... and {truncated} more items")
+                entries += 1
 
     if root.is_dir():
         rec(root, "", 0, [])
@@ -214,90 +214,14 @@ def draw_tree(
         print(f"Warning: No files found matching --include-file-types: {types_str}", file=sys.stderr)
         
     if truncation_prefix is not None:
-        remaining = lines - max_lines
-        Export_buffer.write(truncation_prefix + LAST + f"... and {remaining} more lines")
-
-
-def print_summary(
-    *,
-    root: Path,
-    Export_buffer: ExportBuffer,
-    logger: Logger,
-    respect_gitignore: bool = True,
-    gitignore_depth: Optional[int] = None,
-    extra_excludes: Optional[List[str]] = None,
-    include_patterns: List[str] = None,
-    include_file_types: List[str] = None,
-) -> None:
-    """
-    Print a summary showing the count of directories and files at each depth level.
-
-    Args:
-        root (Path): Root directory path to analyze
-        Export_buffer (ExportBuffer): Buffer to write Export to
-        logger (Logger): Logger instance for logging
-        respect_gitignore (bool): If True, respect .gitignore rules. Defaults to True
-        gitignore_depth (Optional[int]): Maximum depth to search for .gitignore files
-        extra_excludes (Optional[List[str]]): Additional exclude patterns
-        include_patterns (List[str]): Patterns for files to include
-        include_file_types (List[str]): File types (extensions) to include
-
-    Returns:
-        None: Prints summary statistics to stdout
-    """
-    summary = defaultdict(lambda: {"dirs": 0, "files": 0})
-    gi = GitIgnoreMatcher(root, enabled=respect_gitignore, gitignore_depth=gitignore_depth)
-    extra_excludes = extra_excludes or []
-
-    def count(dirpath: Path, current_depth: int, patterns: List[str]):
-        if respect_gitignore and gi.within_depth(dirpath):
-            gi_path = dirpath / ".gitignore"
-            if gi_path.is_file():
-                rel_dir = dirpath.relative_to(root).as_posix()
-                prefix_path = "" if rel_dir == "." else rel_dir + "/"
-                for line in gi_path.read_text(encoding="utf-8", errors="ignore").splitlines():
-                    line = line.strip()
-                    if not line or line.startswith("#"):
-                        continue
-                    neg = line.startswith("!")
-                    pat = line[1:] if neg else line
-                    pat = prefix_path + pat.lstrip("/")
-                    patterns = patterns + [("!" + pat) if neg else pat]
-
-        spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
-
-        entries, _ = list_entries(
-            dirpath,
-            root=root,
-            gi=gi,
-            spec=spec,
-            show_all=False,
-            extra_excludes=extra_excludes,
-            max_items=None,
-            exclude_depth=None,
-            no_files=False,
-            include_patterns=include_patterns,
-            include_file_types=include_file_types,
-        )
-
-        for entry in entries:
-            if entry.is_dir():
-                summary[current_depth]["dirs"] += 1
-                count(entry, current_depth + 1, patterns)
-            else:
-                summary[current_depth]["files"] += 1
-
-    count(root, 0, [])
-
-    Export_buffer.write("\nDirectory Summary:")
-    for level in sorted(summary):
-        Export_buffer.write(f"Level {level}: {summary[level]['dirs']} dirs, {summary[level]['files']} files")
+        remaining = entries - max_entries
+        output_buffer.write(truncation_prefix + LAST + f"... and {remaining} more entries")
 
 
 def run_tree_mode(
     args,
     roots: List[Path],
-    Export_buffer,
+    output_buffer,
     logger,
     selected_files_map: Optional[dict] = None
 ) -> None:
@@ -312,17 +236,17 @@ def run_tree_mode(
         # Add header for multiple paths
         if len(roots) > 1:
             if i > 0:
-                Export_buffer.write("")  # Empty line between trees
-            Export_buffer.write(str(root))
+                output_buffer.write("")  # Empty line between trees
+            output_buffer.write(str(root))
 
-        # Determine max_lines based on flags
-        max_lines = args.max_lines
-        if args.no_max_lines:
-            max_lines = None
+        # Determine max_entries based on flags
+        max_entries = args.max_entries
+        if args.no_max_entries:
+            max_entries = None
 
         draw_tree(
             root=root,
-            Export_buffer=Export_buffer,
+            output_buffer=output_buffer,
             logger=logger,
             depth=args.max_depth,
             show_all=args.hidden_items,
@@ -330,7 +254,7 @@ def run_tree_mode(
             respect_gitignore=not args.no_gitignore,
             gitignore_depth=args.gitignore_depth,
             max_items=args.max_items,
-            max_lines=max_lines,
+            max_entries=max_entries,
             no_limit=args.no_limit,
             exclude_depth=args.exclude_depth,
             no_files=args.no_files,
@@ -342,23 +266,11 @@ def run_tree_mode(
             files_first=args.files_first,
         )
 
-        if args.summary:
-            print_summary(
-                root=root,
-                Export_buffer=Export_buffer,
-                logger=logger,
-                respect_gitignore=not args.no_gitignore,
-                gitignore_depth=args.gitignore_depth,
-                extra_excludes=args.exclude,
-                include_patterns=args.include,
-                include_file_types=args.include_file_types,
-            )
-
-    # Write to Export file if requested
+    # Write to output file if requested
     if args.export is not None:
         # If format is tree, write whatever was drawn to the buffer.
         if args.format == "tree":
-            content = Export_buffer.get_value()
+            content = output_buffer.get_value()
 
         else:
             # For json/md we must build structured tree data (not the unicode rendering)
@@ -367,7 +279,7 @@ def run_tree_mode(
             # NOTE: keeps previous behavior: export uses last processed root
             tree_data = build_tree_data(
                 root=root,
-                export_buffer=Export_buffer,
+                output_buffer=output_buffer,
                 logger=logger,
                 depth=args.max_depth,
                 show_all=args.hidden_items,
@@ -375,7 +287,7 @@ def run_tree_mode(
                 respect_gitignore=not args.no_gitignore,
                 gitignore_depth=args.gitignore_depth,
                 max_items=args.max_items,
-                max_lines=args.max_lines,
+                max_entries=args.max_entries,
                 exclude_depth=args.exclude_depth,
                 no_files=args.no_files,
                 whitelist=selected_files,
@@ -394,23 +306,22 @@ def run_tree_mode(
                     content = format_json(tree_data)
             else:
                 # fallback safety
-                content = Export_buffer.get_value()
+                content = output_buffer.get_value()
 
         with open(args.export, "w", encoding="utf-8") as f:
             f.write(content)
 
 
     if args.copy:
-        
         # Copy the formatted Export, not always the unicode tree
-        content_to_copy = Export_buffer.get_value()
-        if args.format in ("json", "md", "txt") or include_contents:
-            
+        content_to_copy = output_buffer.get_value()
+        if args.format in ("json", "md"):
+
             include_contents = not args.no_contents
 
             tree_data = build_tree_data(
                 root=root,
-                export_buffer=Export_buffer,
+                output_buffer=output_buffer,
                 logger=logger,
                 depth=args.max_depth,
                 show_all=args.hidden_items,
@@ -418,7 +329,7 @@ def run_tree_mode(
                 respect_gitignore=not args.no_gitignore,
                 gitignore_depth=args.gitignore_depth,
                 max_items=args.max_items,
-                max_lines=args.max_lines,
+                max_entries=args.max_entries,
                 exclude_depth=args.exclude_depth,
                 no_files=args.no_files,
                 whitelist=selected_files,
@@ -440,11 +351,11 @@ def run_tree_mode(
 
 
         if not copy_to_clipboard(content_to_copy, logger=logger):
-            Export_buffer.write(
+            output_buffer.write(
                 "Warning: Could not copy to clipboard. "
                 "Please install a clipboard utility (xclip, wl-copy) "
                 "or ensure your environment supports it."
             )
         else:
-            Export_buffer.clear()
+            output_buffer.clear()
             logger.log(logger.INFO, "Tree Export copied to clipboard successfully.")

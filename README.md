@@ -286,9 +286,9 @@ In addition to the directory path, the following options are available:
 | `--no-gitignore`        | Ignore all `.gitignore` rules.                                          |
 | `--max-items`           | Limit items per directory (default: 20).                                |
 | `--no-limit`            | Remove per-directory item limit.                                        |
-| `--max-lines`           | Limit lines (default: 40).                                              |
+| `--max-entries`           | Limit entries (default: 40).                                              |
 | `--no-limit`            | Remove per-directory item limit.                                        |
-| `--no-max-lines`        | Disable total lines limit.                                              |
+| `--no-max-entries`        | Disable total entries limit.                                              |
 | `--no-files`            | Show only directories (hide files).                                     |
 | `--emoji`, `-e`         | Use emojis in output.                                                   |
 | `--summary`             | Print file/folder counts per level.                                     |

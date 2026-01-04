@@ -23,7 +23,7 @@ def build_tree_data(
     respect_gitignore: bool,
     gitignore_depth: Optional[int],
     max_items: Optional[int] = None,
-    max_lines: Optional[int] = None,
+    max_entries: Optional[int] = None,
     exclude_depth: Optional[int] = None,
     no_files: bool = False,
     whitelist: Optional[Set[str]] = None,
@@ -56,12 +56,12 @@ def build_tree_data(
         "children": []
     }
 
-    lines=1 # Count lines for max_lines limit
-    stop_writing=False # Flag to stop writing when max_lines is reached
+    entries=1 # Count lines for max_entries limit
+    stop_writing=False # Flag to stop writing when max_entries is reached
 
     def rec(dirpath: Path, current_depth: int, patterns: List[str]) -> List[Dict[str, Any]]:
         """Recursively build tree data for a directory."""
-        nonlocal lines, stop_writing
+        nonlocal entries, stop_writing
         if depth is not None and current_depth >= depth:
             return []
 
@@ -85,7 +85,7 @@ def build_tree_data(
         spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
 
         # Get entries
-        entries, truncated = list_entries(
+        entry_list, truncated = list_entries(
             dirpath,
             root=root,
             export_buffer=export_buffer,
@@ -95,7 +95,7 @@ def build_tree_data(
             show_all=show_all,
             extra_excludes=extra_excludes,
             max_items=max_items,
-            max_lines=max_lines,
+            max_entries=max_entries,
             exclude_depth=exclude_depth,
             no_files=no_files,
             include_patterns=include_patterns,
@@ -104,7 +104,7 @@ def build_tree_data(
 
         # Filter by whitelist
         filtered_entries = []
-        for entry in entries:
+        for entry in entry_list:
             entry_path = str(entry.absolute())
             if whitelist is not None:
                 if entry.is_file():
@@ -115,17 +115,17 @@ def build_tree_data(
                         continue
             filtered_entries.append(entry)
 
-        entries = filtered_entries
+        entry_list = filtered_entries
 
         # Build children list
         children = []
-        for i, entry in enumerate(entries):
+        for i, entry in enumerate(entry_list):
             if stop_writing:
                 break
 
-            if max_lines is not None and lines >= max_lines:
-                remaining = len(entries) - i + truncated
-                children.append({"name": "... and more lines", "type": "truncated"})
+            if max_entries is not None and entries >= max_entries:
+                remaining = len(entry_list) - i + truncated
+                children.append({"name": "... and more entries", "type": "truncated"})
                 stop_writing = True
                 break
 
@@ -141,10 +141,10 @@ def build_tree_data(
                     file_node["contents"] = read_file_contents(entry)
 
                 children.append(file_node)
-                lines += 1
+                entries += 1
 
             elif entry.is_dir():
-                lines += 1
+                entries += 1
                 child_node = {
                     "name": entry.name,
                     "type": "directory",
@@ -159,7 +159,7 @@ def build_tree_data(
                 "name": f"... and {truncated} more items",
                 "type": "truncated"
             })
-            lines += 1
+            entries += 1
 
         return children
 

@@ -90,13 +90,13 @@ def validate_config(logger: Logger, config: Dict[str, Any]) -> None:
                 logger.log(Logger.ERROR, 
                     "key 'max_items' must be between 1 and 10000, got {value} in config.json")
 
-        elif key == "max_lines":
+        elif key == "max_entries":
             if not isinstance(value, int):
                 logger.log(Logger.ERROR, 
-                    f"key 'max_lines' must be int, got {type(value).__name__} in config.json")
+                    f"key 'max_entries' must be int, got {type(value).__name__} in config.json")
             if value < 1:
                 logger.log(Logger.ERROR, 
-                    f"key 'max_lines' must be positive, got {value} in config.json")
+                    f"key 'max_entries' must be positive, got {value} in config.json")
 
         elif key in optional_int_keys:
             if not isinstance(value, int):
@@ -215,50 +215,3 @@ def open_config_in_editor(logger: Logger) -> None:
         logger.log(Logger.ERROR, f"Please manually open: {config_path.absolute()}")
         logger.log(Logger.ERROR, 
             f"Or set your EDITOR environment variable to your preferred editor.")
-
-
-def merge_config_with_args(config: dict, args: argparse.Namespace) -> argparse.Namespace:
-    """
-    Replaces the absent values in the args with values from config.
-
-    Args:
-        config: Configuration dictionary loaded from config.json
-        args: Parsed command-line arguments
-    
-    Returns:
-        argparse.Namespace: Merged arguments with config values filled in
-    """
-    for key, value in config.items():
-        arg_key = key.replace("-", "_")
-
-        if not hasattr(args, arg_key):
-            setattr(args, arg_key, value)
-
-    return args
-
-
-def resolve_config(args: argparse.Namespace, logger: Logger) -> argparse.Namespace:
-    """
-    Resolves the final configuration by merging in the following order:
-
-    1. Hardcoded defaults (always applied).
-    2. User config (only if --no-config is not set).
-    3. CLI args (highest precedence, overrides both defaults and user config).
-
-    This ensures that required attributes are always present and prevents
-    crashes when running with --no-config.
-    """
-    # Always start with hardcoded defaults
-    config = get_default_config()
-
-    # If config is allowed, merge user config on top of defaults
-    if not getattr(args, "no_config", False):
-        user_config = load_user_config(logger=logger)
-        if user_config:
-            config.update(user_config)
-
-    # Merge config/defaults with CLI args (CLI takes precedence)
-    args = merge_config_with_args(config, args)
-
-    return args
-
