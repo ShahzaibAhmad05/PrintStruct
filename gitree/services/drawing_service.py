@@ -84,7 +84,9 @@ class DrawingService:
             label = _name(p)
             em = _emoji_for(node)
 
-            if DrawingService._is_hidden(p):
+            if config.no_color:
+                color = Color.default
+            elif DrawingService._is_hidden(p):
                 color = Color.grey
             elif _is_dir(node):
                 color = Color.cyan
@@ -101,9 +103,10 @@ class DrawingService:
         root_emoji = _emoji_for(tree_data)
 
         if root_emoji:
-            ctx.output_buffer.write(f"{root_emoji} {Color.cyan(root_label)}")
+            ctx.output_buffer.write(f"{root_emoji} "
+                f"{Color.cyan(root_label) if not config.no_color else root_label}")
         else:
-            ctx.output_buffer.write(f"{Color.cyan(root_label)}")
+            ctx.output_buffer.write(f"{Color.cyan(root_label) if not config.no_color else root_label}")
 
         def _rec(node: dict[str, Any], prefix: str) -> None:
             kids = _children_sorted(node.get("children", []))

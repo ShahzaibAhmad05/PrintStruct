@@ -18,11 +18,11 @@ class TestListingControlFlags(BaseCLISetup):
         self.assertNotIn("nested.txt", result.stdout)
 
 
-    def test_no_max_items(self):
+    def test_no_max_entries(self):
         # Override base structure for this test
         (self.root / "file.txt").unlink()
 
-        for i in range(30):  # default limit is 20
+        for i in range(30):  # Assume default limit is 20
             (self.root / "folder" / f"file{i}.txt").write_text("data")
 
         result = self._run_cli("--no-max-items", "--no-max-entries")

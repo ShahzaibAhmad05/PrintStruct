@@ -38,11 +38,11 @@ class Color:
     BRIGHT_WHITE = "\033[97m"
 
     @staticmethod
-    def _wrap(code: str, text: str) -> str:
-        return f"{code}{text}{Color.RESET}"
+    def _wrap(code: str, text: str, reset: str=RESET) -> str:
+        return f"{code}{text}{reset}"
 
     def default(text: str) -> str:
-        return Color._wrap("", text)
+        return Color._wrap("", text, "")
 
     # styles
     @staticmethod

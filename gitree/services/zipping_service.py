@@ -35,11 +35,7 @@ class ZippingService:
         if not getattr(config, "zip", False):
             return
 
-        zip_path = getattr(config, "output", None) or getattr(config, "zip_path", None)
-        if zip_path is None:
-            return
-
-        zip_path = zip_path if isinstance(zip_path, Path) else Path(str(zip_path))
+        zip_path = Path(config.zip)
         zip_path.parent.mkdir(parents=True, exist_ok=True)
 
         root = tree_data.get("self")

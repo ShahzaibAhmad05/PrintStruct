@@ -48,8 +48,8 @@ class ResolveItemsService:
 
         # Start from the parent dir and keep adding items recursively
         # includes resolving hidden_files, gitignore, include and exclude
-        resolved_items = ResolveItemsService._resolve_items_rec(ctx, config, 
-            resolved_paths=resolved_root_paths[:-1], curr_depth=0, 
+        resolved_items, _ = ResolveItemsService._resolve_items_rec(ctx, config, 
+            resolved_paths=resolved_root_paths[:-1], curr_depth=0, curr_entries=1,
             gitignore_matcher=GitIgnoreMatcher(),
             curr_dir=resolved_root_paths[-1], include_paths=resolved_include_paths[:-1], 
             exclude_paths=resolved_exclude_paths[:-1])
@@ -109,14 +109,15 @@ class ResolveItemsService:
 
     @staticmethod
     def _resolve_items_rec(ctx: AppContext, config: Config, *,
-        resolved_paths: list[Path], curr_dir: Path, curr_depth: int, 
+        resolved_paths: list[Path], curr_dir: Path, curr_depth: int, curr_entries: int,
         include_paths: list[Path], exclude_paths: list[Path], 
-        gitignore_matcher: GitIgnoreMatcher) -> dict[str, Any]:
+        gitignore_matcher: GitIgnoreMatcher) -> tuple[dict[str, Any], int]:
         """
         Resolve the paths recursively.
 
         Returns:
             dict[str, Any]: A dict of the resolved root and a list of children paths
+            int: current entries to keep track of the number of entries during recursion
         """
 
         resolved_root: dict[str, Any] = {
@@ -124,8 +125,13 @@ class ResolveItemsService:
             "children": []
         }
 
-        # Get the dir's children
-        children_to_add = curr_dir.iterdir()
+        # Implementation for --max-depth
+        if curr_depth > config.max_depth - 1:
+            return resolved_root, curr_entries
+        
+
+        # Get the dir's children, sorted order, and files first
+        children_to_add = sorted(curr_dir.iterdir(), key=lambda p: (p.is_dir(), p.name.lower()))
 
 
         # Setup gitignore object for this dir (if there is a .gitignore)
@@ -134,11 +140,18 @@ class ResolveItemsService:
                 GitIgnore(ctx, config, gitignore_path=(curr_dir / ".gitignore")))
 
 
+        items_added = 0
         # Now traverse the dir and add items
         for item_path in children_to_add:
 
             # If --no-files is used, then skip files
             if config.no_files and item_path.is_file(): continue
+
+            # If reached --max-items or --max-entries, then exit
+            # NOTE: This is ok for now, but needs to be corrected later
+            if not config.no_max_items and items_added >= config.max_items: break
+            if not config.no_max_entries and curr_entries >= config.max_entries: break
+
 
             # Check if it is not a hidden file/dir or hidden-items flag is used
             if (config.hidden_items or not ResolveItemsService._ishidden(item_path)):
@@ -151,21 +164,22 @@ class ResolveItemsService:
                     if (not ResolveItemsService._isunder(item_path, exclude_paths) 
                         and (not curr_depth > config.gitignore_depth and 
                             not gitignore_matcher.excluded(item_path))):    
+                        
                         resolved_root["children"].append(item_path)
+                        items_added += 1
+                        curr_entries += 1
 
 
-        if curr_depth <= config.max_depth:
-            # Now use the same function to resolve for each dir in children
-            for idx, item_path in enumerate(resolved_root["children"]):
-                # Resolve for the item only if it is a directory
-                if item_path.is_dir():
-                    resolved_root["children"][idx] = ResolveItemsService._resolve_items_rec(
-                        ctx, config, resolved_paths=resolved_paths,
-                        curr_dir=item_path, include_paths=include_paths, 
-                        gitignore_matcher=gitignore_matcher,
-                        exclude_paths=exclude_paths, curr_depth=curr_depth+1)     
+        # Now use the same function to resolve for each dir in children
+        for idx, item_path in enumerate(resolved_root["children"]):
+            # Resolve for the item only if it is a directory
+            if item_path.is_dir():
+                resolved_root["children"][idx], curr_entries = ResolveItemsService._resolve_items_rec(ctx, config, resolved_paths=resolved_paths, curr_entries=curr_entries,
+                    curr_dir=item_path, include_paths=include_paths, 
+                    gitignore_matcher=gitignore_matcher,
+                    exclude_paths=exclude_paths, curr_depth=curr_depth+1)  
 
-        return resolved_root
+        return resolved_root, curr_entries
 
 
     @staticmethod
@@ -181,5 +195,3 @@ class ResolveItemsService:
     @staticmethod
     def _isunder(path: Path, parents: list[Path]) -> bool:
         return any(path == p or path.is_relative_to(p) for p in parents)
-
-    
