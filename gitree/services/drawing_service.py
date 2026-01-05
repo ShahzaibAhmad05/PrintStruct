@@ -15,6 +15,7 @@ from ..constants.constant import (FILE_EMOJI, NORMAL_DIR_EMOJI, EMPTY_DIR_EMOJI,
     BRANCH, LAST, VERT, SPACE)
 from ..objects.app_context import AppContext
 from ..objects.config import Config
+from ..utilities.color_utility import Color
 
 
 class DrawingService:
@@ -78,29 +79,37 @@ class DrawingService:
                 return sorted(children, key=lambda c: (0 if not _is_dir(c) else 1, _name(_p(c.get("self") if _is_dir(c) else c)).lower()))
             return sorted(children, key=lambda c: (0 if _is_dir(c) else 1, _name(_p(c.get("self") if _is_dir(c) else c)).lower()))
 
-        def _write_line(prefix: str, connector: str, node: Any, root: str) -> None:
+        def _write_line(prefix: str, connector: str, node: Any) -> None:
             p = _p(node.get("self") if _is_dir(node) else node)
             label = _name(p)
             em = _emoji_for(node)
-            if em:
-                ctx.output_buffer.write(f"{prefix}{connector}{em} {label}")
+
+            if DrawingService._is_hidden(p):
+                color = Color.grey
+            elif _is_dir(node):
+                color = Color.cyan
             else:
-                ctx.output_buffer.write(f"{prefix}{connector}{label}")
+                color = Color.default
+
+            if em:
+                ctx.output_buffer.write(f"{prefix}{connector}{em} {color(label)}")
+            else:
+                ctx.output_buffer.write(f"{prefix}{connector}{color(label)}")
 
         root_path = _p(tree_data.get("self"))
         root_label = _name(root_path)
         root_emoji = _emoji_for(tree_data)
 
         if root_emoji:
-            ctx.output_buffer.write(f"{root_emoji} {root_label}")
+            ctx.output_buffer.write(f"{root_emoji} {Color.cyan(root_label)}")
         else:
-            ctx.output_buffer.write(f"{root_label}")
+            ctx.output_buffer.write(f"{Color.cyan(root_label)}")
 
         def _rec(node: dict[str, Any], prefix: str) -> None:
             kids = _children_sorted(node.get("children", []))
             for i, child in enumerate(kids):
                 connector = LAST if i == len(kids) - 1 else BRANCH
-                _write_line(prefix, connector, child, root_path)
+                _write_line(prefix, connector, child)
                 if _is_dir(child):
                     next_prefix = prefix + (SPACE if connector == LAST else VERT)
                     _rec(child, next_prefix)
@@ -144,3 +153,10 @@ class DrawingService:
             return node.as_posix() if hasattr(node, "as_posix") else str(node)
 
         ctx.output_buffer.write(json.dumps(_norm(tree_data), indent=2))
+
+
+    @staticmethod
+    def _is_hidden(p: str) -> bool:
+        s = p.replace("\\", "/").strip("/")
+        parts = [x for x in s.split("/") if x]
+        return any(part.startswith(".") for part in parts)
