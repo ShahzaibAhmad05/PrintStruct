@@ -125,7 +125,7 @@ class ResolveItemsService:
         }
 
         # Get the dir's children
-        children = curr_dir.iterdir()
+        children_to_add = curr_dir.iterdir()
 
 
         # Setup gitignore object for this dir (if there is a .gitignore)
@@ -135,7 +135,10 @@ class ResolveItemsService:
 
 
         # Now traverse the dir and add items
-        for item_path in children:
+        for item_path in children_to_add:
+
+            # If --no-files is used, then skip files
+            if config.no_files and item_path.is_file(): continue
 
             # Check if it is not a hidden file/dir or hidden-items flag is used
             if (config.hidden_items or not ResolveItemsService._ishidden(item_path)):
@@ -146,7 +149,8 @@ class ResolveItemsService:
                     # Check if the item is defined by an include pattern
                     # Or if there is a gitignore that says it is excluded
                     if (not ResolveItemsService._isunder(item_path, exclude_paths) 
-                        and not gitignore_matcher.excluded(item_path)):    
+                        and (not curr_depth > config.gitignore_depth and 
+                            not gitignore_matcher.excluded(item_path))):    
                         resolved_root["children"].append(item_path)
 
 

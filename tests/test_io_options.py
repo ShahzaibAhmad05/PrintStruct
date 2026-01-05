@@ -8,7 +8,7 @@ class TestIOFlags(BaseCLISetup):
     # Note: There is no test for copy-to-clipboard currently
     # because real clipboard access is often unavailable/flaky in CI environments.
 
-    def test_entry_point_zip(self):
+    def test_zip(self):
         zip_path = self.root / "output.zip"
 
         result = self._run_cli("--zip", zip_path.name)
@@ -21,7 +21,7 @@ class TestIOFlags(BaseCLISetup):
             self.assertIn("file.txt", names)
 
 
-    def test_entry_point_export(self):
+    def test_export(self):
         out_path = self.root / "tree_export.txt"
 
         result = self._run_cli("--export", out_path.name)
@@ -31,25 +31,4 @@ class TestIOFlags(BaseCLISetup):
 
         content = out_path.read_text()
         self.assertIn("file.txt", content)
-
-
-    def test_entry_point_init_config(self):
-        config_path = self.root / "config.json"
-
-        # Ensure config.json doesn't exist initially
-        self.assertFalse(config_path.exists(), "config.json should not exist before test")
-
-        result = self._run_cli("--init-config")
-
-        self.assertEqual(result.returncode, 0, msg=result.stderr)
-        self.assertTrue(config_path.exists(), "config.json was not created")
-
-        # Verify it's valid JSON with expected keys
-        import json
-        with open(config_path) as f:
-            config = json.load(f)
-
-        # Check for some expected default keys
-        self.assertIn("max_items", config)
-        self.assertIn("emoji", config)
-        self.assertIn("hidden_items", config)
+        

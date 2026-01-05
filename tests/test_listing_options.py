@@ -10,7 +10,7 @@ class TestListingFlags(BaseCLISetup):
         return emoji + " " + file_name
 
 
-    def test_entry_point_emoji(self):
+    def test_emoji(self):
         # Create empty and simple directories to test both emojis
         (self.root / "empty_folder").mkdir()
         result = self._run_cli("--emoji", "--no-color")
@@ -23,7 +23,7 @@ class TestListingFlags(BaseCLISetup):
         self.assertIn(self.__build_name_with_emoji('folder', NORMAL_DIR_EMOJI), result.stdout)
 
 
-    def test_entry_point_max_depth(self):
+    def test_max_depth(self):
         result = self._run_cli("--max-depth", "1")
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
@@ -33,7 +33,7 @@ class TestListingFlags(BaseCLISetup):
         self.assertNotIn("nested.txt", result.stdout)
 
 
-    def test_entry_point_hidden_items(self):
+    def test_hidden_items(self):
         # Create hidden files and directories
         (self.root / ".hidden_file.txt").write_text("hidden")
         (self.root / ".hidden_dir").mkdir()
@@ -58,7 +58,7 @@ class TestListingFlags(BaseCLISetup):
         self.assertIn(".hidden_dir", result_with_flag.stdout)
 
 
-    def test_entry_point_files_first(self):
+    def test_files_first(self):
         # Create a folder and a file
         tmp_dir = "random_dir"
         tmp_file = "random_file.txt"
@@ -99,7 +99,7 @@ class TestListingFlags(BaseCLISetup):
     #     self.assertIn("visible.py", result_with.stdout)
 
 
-    def test_entry_point_include_overrides_gitignore(self):
+    def test_include_overrides_gitignore(self):
         # Create .gitignore that ignores .py files
         (self.root / ".gitignore").write_text("*.py\n*.log\n")
         (self.root / "script.py").write_text("python")
@@ -130,7 +130,7 @@ class TestListingFlags(BaseCLISetup):
     #     self.assertIn("data.json", result_with.stdout)
 
 
-    def test_entry_point_include_file_types_overrides_hidden(self):
+    def test_include_file_types_overrides_hidden(self):
         # Create hidden JSON and Python files
         (self.root / ".config.json").write_text("{}")
         (self.root / ".secret.py").write_text("secret")
@@ -153,7 +153,7 @@ class TestListingFlags(BaseCLISetup):
         self.assertIn("readme.md", result_with.stdout)
 
 
-    def test_entry_point_include_file_types_overrides_gitignore(self):
+    def test_include_file_types_overrides_gitignore(self):
         # Create .gitignore that ignores JSON files
         (self.root / ".gitignore").write_text("*.json\n*.yaml\n")
         (self.root / "config.json").write_text("{}")
@@ -180,7 +180,7 @@ class TestListingFlags(BaseCLISetup):
         self.assertIn("readme.md", result_with.stdout)
 
 
-    def test_entry_point_include_no_match_warning(self):
+    def test_include_no_match_warning(self):
         # Create files that don't match the include pattern
         (self.root / "data.json").write_text("{}")
         (self.root / "readme.md").write_text("docs")
@@ -193,7 +193,7 @@ class TestListingFlags(BaseCLISetup):
         self.assertIn("*.py", result.stderr)
 
 
-    def test_entry_point_include_file_types_no_match_warning(self):
+    def test_include_file_types_no_match_warning(self):
         # Create files that don't match the include file types
         (self.root / "data.json").write_text("{}")
         (self.root / "readme.md").write_text("docs")
@@ -220,7 +220,7 @@ class TestListingFlags(BaseCLISetup):
         # self.assertIn("folder", result.stdout)
 
 
-    def test_entry_point_exclude(self):
+    def test_exclude(self):
         # Create multiple file types
         (self.root / "script.py").write_text("python")
         (self.root / "data.json").write_text("{}")
@@ -242,7 +242,7 @@ class TestListingFlags(BaseCLISetup):
         self.assertNotIn("test.py", result.stdout)
 
 
-    def test_entry_point_exclude_multiple_patterns(self):
+    def test_exclude_multiple_patterns(self):
         # Create various files
         (self.root / "file.log").write_text("log")
         (self.root / "cache.tmp").write_text("temp")
