@@ -144,16 +144,16 @@ class ParsingService:
 
     @staticmethod
     def _add_general_options(ctx: AppContext, ap: argparse.ArgumentParser):
-        basic = ap.add_argument_group("general options")
-        basic.add_argument("-v", "--version", action="store_true", 
+        general = ap.add_argument_group("general options")
+        general.add_argument("-v", "--version", action="store_true", 
             default=argparse.SUPPRESS, help="Display the version of the tool")
-        basic.add_argument("--init-config", action="store_true", 
+        general.add_argument("--init-config", action="store_true", 
             default=argparse.SUPPRESS, help="Create a default config.json file")
-        basic.add_argument("--config-user", action="store_true", 
+        general.add_argument("--config-user", action="store_true", 
             default=argparse.SUPPRESS, help="Open config.json in the default editor")
-        basic.add_argument("--no-config", action="store_true", 
+        general.add_argument("--no-config", action="store_true", 
             default=argparse.SUPPRESS, help="Ignore config.json and use defaults")
-        basic.add_argument("--verbose", action="store_true", 
+        general.add_argument("--verbose", action="store_true", 
             default=argparse.SUPPRESS, help="Enable verbose output")
 
 

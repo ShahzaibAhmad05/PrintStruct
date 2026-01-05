@@ -10,12 +10,13 @@ if sys.platform.startswith('win'):      # fix windows unicode error on CI
     sys.stdout.reconfigure(encoding='utf-8')
 
 # Deps from this project
-from .services.tree_service import run_tree_mode
 from .services.parsing_service import ParsingService
-from .services.basic_args_handling_service import handle_basic_cli_args, resolve_root_paths
-from .services.zipping_service import ZippingService
-from .services.interactive import get_interactive_file_selection
+from .services.general_options_service import GeneralOptionsService
+from .services.resolve_items_service import ResolveItemsService
+from .services.drawing_service import DrawingService
+# from .services.zipping_service import ZippingService
 from .objects.app_context import AppContext
+from .services.interactive_selection_service import InteractiveSelectionService
 
 
 def main() -> None:
@@ -33,44 +34,50 @@ def main() -> None:
     config = ParsingService.parse_args(ctx)
 
 
-    # if some specific Basic CLI args given, execute and return
+    # if general options used, they are executed here 
     # Handles for --version, --init-config, --config-user, --no-config
-    handle_basic_cli_args(ctx, config)
+    GeneralOptionsService.handle_args(ctx, config)
 
 
-    # Validate and resolve all paths
-    roots = resolve_root_paths(ctx, config)
-    selected_files_map = {}     # Map to keep track of selected files per root
+    # This service returns all the items to include resolved in a dict
+    # Hover over ResolveItemsService to check the format which it returns
+    resolved_root = ResolveItemsService.resolve_items(ctx, config)
 
 
-    # Handle interactive selection first
-    if config.interactive:        # Get files map from interactive selection
-        selected_files_map = get_interactive_file_selection(ctx, config, roots)
-        # Filter roots based on interactive selection
-        roots = list(selected_files_map.keys())
+    # Select files interactively if requested
+    # TODO: this one is currently broken
+    if config.interactive:
+        resolved_root = InteractiveSelectionService.run(ctx, config, resolved_root)
 
 
-    # if zipping is requested
-    if config.zip is not None:
-        # Initialize ZippingService with common state
-        zipping_service = ZippingService(ctx, config)
-        zipping_service.zip_roots(config, roots, selected_files_map)
+    with open("test.json", "w") as file:
+        import json     # Debug
+        json.dump(resolved_root, file, indent=4, default=str)
 
 
-    # else, print the tree normally
-    else:       
-        run_tree_mode(ctx, config, roots, selected_files_map)
+    # Everything is ready
+    # Now do the final operations
+    if config.copy:
+        pass
+
+    elif config.export:
+        pass
+
+    elif config.zip:
+        pass
+
+    elif not config.no_printing:
+        DrawingService.draw(ctx, config, resolved_root)
 
 
     # print the export only if not in no-export mode
-    output_value_exists = not ctx.output_buffer.empty()
-    if not config.no_printing and output_value_exists:
+    if not config.no_printing and not ctx.output_buffer.empty():
         ctx.output_buffer.flush()
 
 
     # print the log if verbose mode
     if config.verbose:
-        if not config.no_printing and output_value_exists: 
+        if not config.no_printing and not ctx.output_buffer.empty(): 
             print()
         print("LOG:")
         ctx.logger.flush()

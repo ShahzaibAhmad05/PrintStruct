@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 # Deps from this project
-from ..utilities.logger import Logger  
+from .logging_utility import Logger  
 from ..objects.app_context import AppContext
 from ..objects.config import Config
 

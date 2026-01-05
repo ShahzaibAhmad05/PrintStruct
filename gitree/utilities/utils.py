@@ -12,7 +12,7 @@ from pathlib import Path
 import pathspec, pyperclip
 
 # Deps from this project
-from ..utilities.logger import Logger
+from .logging_utility import Logger
 
 
 def max_items_int(v: str) -> int:
@@ -53,102 +53,6 @@ def max_entries_int(v: str) -> int:
         raise argparse.ArgumentTypeError(
             "--max-entries must be >= 1 and <=10000")
     return n
-
-
-def get_unused_file_path(root_path: str) -> str:
-    """
-    Returns:
-        str: an unused file ID in the root path given.
-    """
-    itr = 0
-    while True:
-        guessed_path = root_path + f"/{random.randint(100000, 999999)}"
-        if not os.path.exists(guessed_path):
-            return guessed_path
-        elif itr >= 100000:
-            raise argparse.ArgumentError(
-                f"could not find unused zip path within {itr} iterations")
-
-
-def iter_dir(directory: Path) -> list[Path]:
-    """
-    Safely iterate directory contents handling permission errors.
-
-    Args:
-        directory (Path): Directory path to iterate
-
-    Returns:
-        List[Path]: List of paths in the directory, empty list if permission denied
-    """
-    try:
-        return list(directory.iterdir())
-    except PermissionError:
-        return []
-
-
-def matches_extra(p: Path, root: Path, patterns: list[str], ignore_depth: int | None = None) -> bool:
-    """
-    Check if path matches any of the extra ignore patterns using gitignore-style matching.
-    """
-    # If no patterns provided, nothing matches
-    if not patterns:
-        return False
-
-    # Check if path is within ignore_depth
-    if ignore_depth is not None:
-        try:
-            depth = len(p.relative_to(root).parts)
-            if depth > ignore_depth:
-                return False
-        except Exception:
-            pass
-
-    # Create PathSpec from patterns
-    spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
-
-    # Get relative path (same logic as GitIgnoreMatcher)
-    try:
-        rel = p.relative_to(root).as_posix()
-    except Exception:
-        rel = p.name
-
-    # Check if pattern matches (handle directories with trailing /)
-    if spec.match_file(rel):
-        return True
-    if p.is_dir() and spec.match_file(rel + "/"):
-        return True
-
-    return False
-
-
-def matches_file_type(p: Path, file_types: list[str]) -> bool:
-    """
-    Check if path matches any of the specified file types (extensions).
-
-    Args:
-        p: Path to check
-        file_types: List of file extensions (with or without dots, case-insensitive)
-
-    Returns:
-        True if the file extension matches any of the provided types
-    """
-    if not file_types or not p.is_file():
-        return False
-
-    # Get file extension (lowercase for case-insensitive comparison)
-    file_ext = p.suffix.lower()
-
-    # Check each file type
-    for ft in file_types:
-        # Normalize the file type (add dot if missing, lowercase)
-        normalized_ft = ft.lower()
-        if not normalized_ft.startswith('.'):
-            normalized_ft = '.' + normalized_ft
-
-        if file_ext == normalized_ft:
-            return True
-
-    return False
 
 
 def copy_to_clipboard(text: str, logger: Logger) -> bool:

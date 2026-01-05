@@ -8,7 +8,7 @@ for the app context.
 """
 
 # Deps in the same project
-from ..utilities.logger import Logger, OutputBuffer
+from ..utilities.logging_utility import Logger, OutputBuffer
 
 
 class AppContext:

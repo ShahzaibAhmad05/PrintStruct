@@ -54,18 +54,18 @@ class Config:
             "verbose": False,
 
             # Output & export options
-            "zip": None,
-            "export": None,
+            "zip": False,
+            "export": False,
 
             # Listing options
             "format": "txt",
             "max_items": 20,
             "max_entries": 40,
-            "max_depth": None,
-            "gitignore_depth": None,
+            "max_depth": 20,
+            "gitignore_depth": 20,
             "hidden_items": False,
             "exclude": [],
-            "exclude_depth": None,
+            "exclude_depth": 20,
             "include": [],
             "include_file_types": [],
             "copy": False,

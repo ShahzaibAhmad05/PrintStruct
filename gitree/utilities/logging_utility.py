@@ -67,7 +67,7 @@ class Logger:
 
     
     def empty(self) -> bool:
-        return len(self._messages) == 0
+        return self.__len__ == 0
 
 
     def __len__(self) -> int:
