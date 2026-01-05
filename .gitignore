@@ -1,6 +1,7 @@
 # temporary files/cache
 *.egg-info
 __pycache__
+test.json
 
 # environment vars
 myenv

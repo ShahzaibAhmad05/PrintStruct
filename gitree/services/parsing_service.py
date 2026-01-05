@@ -12,7 +12,7 @@ import argparse
 from pathlib import Path
 
 # Imports from this project
-from ..utilities.utils import max_items_int, max_entries_int
+from ..utilities.functions_utility import max_items_int, max_entries_int
 from ..objects.config import Config
 from ..objects.app_context import AppContext
 
