@@ -212,6 +212,8 @@ class ParsingService:
             help="Exclude contents for specific files")
         listing.add_argument("--overrride-files", action="store_true", 
             default=argparse.SUPPRESS, help="Override existing files") 
+        listing.add_argument("--analysis",action="store_true",
+        default=argparse.SUPPRESS,help="Perform full analysis of resolved_root and save to analysis.json")
 
 
     @staticmethod
