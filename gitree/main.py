@@ -1,5 +1,3 @@
-# gitree/main.py
-
 """
 Code file for housing the main function.
 """
@@ -17,8 +15,8 @@ from .services.drawing_service import DrawingService
 from .services.zipping_service import ZippingService
 from .services.export_service import ExportService
 from .services.copy_service import CopyService
+from .services.analysis_service import AnalysisService  # <-- added
 
-# from .services.zipping_service import ZippingService
 from .objects.app_context import AppContext
 from .objects.config import Config
 from .utilities.logging_utility import Logger
@@ -52,30 +50,34 @@ def main() -> None:
     # Record time for performance noting
     start_time = time.time()
 
-
     # Initialize app context
     ctx = AppContext()
-
 
     # Prepare the config object (this has all the args now)
     config = ParsingService.parse_args(ctx)
 
+    # Enable printing explicitly for analysis
+    if getattr(config, "analysis", False):
+        config.no_printing = False
 
     # if general options used, they are executed here 
     # Handles for --version, --init-config, --config-user, --no-config
     GeneralOptionsService.handle_args(ctx, config)
 
-
     # This service returns all the items to include resolved in a dict
-    # Hover over ResolveItemsService to check the format which it returns
     resolved_root = ResolveItemsService.resolve_items(ctx, config)
-
 
     # Select files interactively if requested
     # NOTE: this one is currently broken
     if config.interactive:
         resolved_root = InteractiveSelectionService.run(ctx, config, resolved_root)
 
+    # handle --analysis ---
+    if getattr(config, "analysis", False):
+        analysis_service = AnalysisService(resolved_root)
+        analysis_result = analysis_service.run_analysis()
+        print(f"Analysis complete. Saved {len(analysis_result)} items to 'analysis.json'.")
+        return
 
     # Everything is ready
     # Now do the final operations
@@ -91,10 +93,8 @@ def main() -> None:
         elif config.export:
             ExportService.run(ctx, config, resolved_root)
 
-
     # Log performance (time)
     ctx.logger.log(Logger.INFO, f"Total time for run: {int((time.time()-start_time)*1000)} ms")
-
 
     # Flush the buffers to the console before exiting
     flush_buffers(ctx, config)
