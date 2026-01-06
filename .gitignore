@@ -2,6 +2,7 @@
 *.egg-info
 __pycache__
 test.json
+.gitree
 
 # environment vars
 myenv

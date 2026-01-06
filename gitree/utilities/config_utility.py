@@ -21,7 +21,11 @@ def get_config_path() -> Path:
     """
     Returns the path to config.json in the current directory.
     """
-    return Path("config.json")
+    
+    path = Path(".gitree/config.json")
+    path.parent.mkdir(exist_ok=True, parents=True)
+
+    return path
 
 
 def get_default_config() -> dict[str, Any]:
@@ -90,7 +94,7 @@ def load_user_config(ctx: AppContext) -> dict[str, Any] | None:
     except json.JSONDecodeError as e:
         ctx.logger.log(Logger.ERROR, 
             f"invalid JSON in config.json at line {e.lineno}, column {e.colno}")
-        ctx.logger.log(Logger.ERROR, f"  {e.msg}")
+        ctx.logger.log(Logger.ERROR, f"{e.msg}")
 
     except Exception as e:
         ctx.logger.log(Logger.ERROR, f"Error: Could not read config.json: {e}")
@@ -125,7 +129,7 @@ def create_default_config(ctx: AppContext) -> None:
         ctx.logger.log(Logger.DEBUG, f"Created config.json at {config_path.absolute()}")
         ctx.logger.log(Logger.DEBUG, "Edit this file to customize default settings for this project.")
     except Exception as e:
-        ctx.logger.log(Logger.ERROR, f"Could not create config.json: {e}", file=sys.stderr)
+        ctx.logger.log(Logger.ERROR, f"Could not create config.json: {e}")
 
 
 def open_config_in_editor(ctx: AppContext) -> None:

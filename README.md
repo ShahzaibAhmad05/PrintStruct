@@ -380,11 +380,10 @@ gitree
 
 ```
 
-For running **tests** after making any changes:
+For running **unit tests** after making changes:
 
 ```bash
-python -m unittest discover tests
-
+python -m tests
 ```
 
 ---
