@@ -9,8 +9,8 @@ class Logger:
     """
     Logger class for storing and flushing debug information.
 
-    This class collects debug messages in memory and prints them
-    all at once when flush() is called.
+    Collect debug messages in memory via log() and print them
+    all at once using flush() method.
     """
 
     # Constant log levels
@@ -22,8 +22,9 @@ class Logger:
 
     def __init__(self):
         """
-        Initialize the logger with an empty message and outputs list.
+        Initialize the logger with an empty buffer.
         """
+
         self._LEVEL_NAMES: dict[int, str] = {
             10: "DEBUG",
             20: "INFO",
@@ -40,9 +41,10 @@ class Logger:
         Args:
             message: The debug message to store
         """
+
         if level is None:
             self._messages.append(message)
-        else:  
+        else:
             self._messages.append(self._append_level(level, message))
 
 
@@ -50,6 +52,7 @@ class Logger:
         """
         Print all stored debug messages to the terminal and clear the buffer.
         """
+
         if not self._messages:
             print("No log messages to display.")
             return
@@ -63,11 +66,27 @@ class Logger:
         """
         Clear all stored messages without printing them.
         """
+
         self._messages.clear()
 
     
     def empty(self) -> bool:
-        return self.__len__ == 0
+        """ 
+        Check if the logger is empty. Uses the __len__ function.
+        """
+
+        return len(self) == 0
+    
+
+    def get_logs(self) -> list[str]:
+        """
+        Get a copy of the stored messages in the buffer.
+
+        Returns:
+            List[str]: a list of the stored messages
+        """
+
+        return self._messages.copy()
 
 
     def __len__(self) -> int:
@@ -77,17 +96,8 @@ class Logger:
         Returns:
             Number of messages in the buffer
         """
+
         return len(self._messages)
-    
-
-    def get_logs(self) -> list[str]:
-        """
-        Get a copy of the stored messages.
-
-        Returns:
-            List of stored messages
-        """
-        return self._messages.copy()
     
 
     def _append_level(self, level: str, message: str) -> str:
@@ -101,6 +111,7 @@ class Logger:
         Returns:
             The message prefixed with the log level
         """
+
         return f"[{self._LEVEL_NAMES[level]}] {message}"
 
 
@@ -137,7 +148,11 @@ class OutputBuffer(Logger):
     
 
     def flush(self) -> None:
-        """ A modification for the parent class flush() function """
+        """ 
+        A modification for the parent class flush() function. Flushes the
+        buffer to the terminal.
+        """
+
         if super().empty():
             return      # Do not print anything
 
