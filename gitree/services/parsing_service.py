@@ -207,10 +207,10 @@ class ParsingService:
             default=argparse.SUPPRESS, help="Disable color output")
         listing.add_argument("--no-contents", action="store_true", 
             default=argparse.SUPPRESS, help="Don't include file contents")
-        listing.add_argument("--no-contents-for", nargs="+", 
-            default=argparse.SUPPRESS, metavar="PATH", 
+        listing.add_argument("--no-contents-for", nargs="+",
+            default=argparse.SUPPRESS, metavar="PATH",
             help="Exclude contents for specific files")
-        listing.add_argument("--overrride-files", action="store_true", 
+        listing.add_argument("--override-files", action="store_true",
             default=argparse.SUPPRESS, help="Override existing files") 
 
 
