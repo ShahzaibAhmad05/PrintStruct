@@ -4,7 +4,7 @@
 Code file for housing InteractiveSelectionService Class
 """
 
-# Defualt libs
+# Default libs
 from pathlib import Path
 from typing import Any, Dict, List, Set, Tuple
 from collections import defaultdict

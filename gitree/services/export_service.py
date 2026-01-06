@@ -4,7 +4,7 @@
 Code file for housing ExportService Class
 """
 
-# Defualt libs
+# Default libs
 from pathlib import Path
 from typing import Any
 
