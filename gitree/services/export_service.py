@@ -25,13 +25,13 @@ class ExportService:
         output_path = Path(config.export)
 
         if fmt in ("txt", "tree"):
-            lines = ExportService._export_txt(ctx, tree_data)
+            lines = ExportService._export_txt(ctx, config, tree_data)
 
         elif fmt == "md":
-            lines = ExportService._export_md(ctx, tree_data)
+            lines = ExportService._export_md(ctx, config, tree_data)
 
         elif fmt == "json":
-            lines = ExportService._export_json(ctx, tree_data)
+            lines = ExportService._export_json(ctx, config, tree_data)
 
         else:
             return
@@ -43,9 +43,10 @@ class ExportService:
 
 
     @staticmethod
-    def _export_txt(ctx: AppContext, tree_data: dict[str, Any]) -> list[str]:
+    def _export_txt(ctx: AppContext, config: Config, tree_data: dict[str, Any]) -> list[str]:
         structure = ctx.output_buffer.get_value()
         out: list[str] = []
+        max_size_mb = getattr(config, "max_file_size_mb", 1.0)
 
         out.extend(structure)
         out.append("")
@@ -55,15 +56,16 @@ class ExportService:
             out.append("")
             out.append(f"FILE: {fp}")
             out.append("-" * (6 + len(str(fp))))
-            out.append(ExportService._read_text(fp).rstrip("\n"))
+            out.append(ExportService._read_text(fp, max_size_mb).rstrip("\n"))
 
         return out
 
 
     @staticmethod
-    def _export_md(ctx: AppContext, tree_data: dict[str, Any]) -> list[str]:
+    def _export_md(ctx: AppContext, config: Config, tree_data: dict[str, Any]) -> list[str]:
         structure = ctx.output_buffer.get_value()
         out: list[str] = []
+        max_size_mb = getattr(config, "max_file_size_mb", 1.0)
 
         out.append("## Project Structure")
         out.extend(structure)       # Assuming structure is already in md format
@@ -74,7 +76,7 @@ class ExportService:
             out.append(f"### File: {fp}")
             out.append("")
             out.append("```text")
-            out.append(ExportService._read_text(fp).rstrip("\n"))
+            out.append(ExportService._read_text(fp, max_size_mb).rstrip("\n"))
             out.append("```")
             out.append("")
 
@@ -82,15 +84,16 @@ class ExportService:
 
 
     @staticmethod
-    def _export_json(ctx: AppContext, tree_data: dict[str, Any]) -> list[str]:
+    def _export_json(ctx: AppContext, config: Config, tree_data: dict[str, Any]) -> list[str]:
         import json
 
         structure = ctx.output_buffer.get_value()
+        max_size_mb = getattr(config, "max_file_size_mb", 1.0)
 
         files = [
             {
                 "path": str(fp),
-                "content": ExportService._read_text(fp),
+                "content": ExportService._read_text(fp, max_size_mb),
             }
             for fp in ExportService._iter_files(tree_data)
         ]
@@ -133,24 +136,40 @@ class ExportService:
 
 
     @staticmethod
-    def _read_text(path: Path) -> str:
+    def _read_text(path: Path, max_size_mb: float = 1.0) -> str:
         """
-        Read a file as text safely.
+        Read a file as text with size limit and binary detection.
 
         Args:
             path (Path): The file path to read
+            max_size_mb (float): Maximum file size in MB (default: 1.0)
 
         Returns:
-            str: File content decoded as text
+            str: File content, or placeholder for binary/large/inaccessible files
         """
         p = path if isinstance(path, Path) else Path(str(path))
+
         try:
+            # Check file size
+            size_bytes = p.stat().st_size
+            size_mb = size_bytes / (1024 * 1024)
+
+            if size_mb > max_size_mb:
+                return f"[file too large: {size_mb:.2f}mb]"
+
+            # Check if binary (read first 8KB)
+            with open(p, 'rb') as f:
+                chunk = f.read(min(8192, size_bytes))
+                if b'\x00' in chunk:  # Null byte indicates binary
+                    return "[binary file]"
+
+            # Read as text
             return p.read_text(encoding="utf-8", errors="ignore")
-        except Exception:
-            try:
-                return p.read_bytes().decode("utf-8", errors="ignore")
-            except Exception:
-                return ""
+
+        except PermissionError:
+            return "[permission denied]"
+        except Exception as e:
+            return f"[error reading file: {str(e)}]"
 
 
     @staticmethod

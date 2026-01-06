@@ -207,10 +207,13 @@ class ParsingService:
             default=argparse.SUPPRESS, help="Disable color output")
         listing.add_argument("--no-contents", action="store_true", 
             default=argparse.SUPPRESS, help="Don't include file contents")
-        listing.add_argument("--no-contents-for", nargs="+", 
-            default=argparse.SUPPRESS, metavar="PATH", 
+        listing.add_argument("--no-contents-for", nargs="+",
+            default=argparse.SUPPRESS, metavar="PATH",
             help="Exclude contents for specific files")
-        listing.add_argument("--overrride-files", action="store_true", 
+        listing.add_argument("--max-file-size", type=float,
+            default=argparse.SUPPRESS, metavar="MB", dest="max_file_size_mb",
+            help="Maximum file size in MB to include in exports (default: 1.0)")
+        listing.add_argument("--overrride-files", action="store_true",
             default=argparse.SUPPRESS, help="Override existing files") 
 
 
