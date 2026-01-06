@@ -7,7 +7,6 @@ Code file for housing GeneralOptionsService.
 # Deps from this project
 from ..objects.app_context import AppContext
 from ..objects.config import Config
-from ..utilities.config_utility import create_default_config, open_config_in_editor
 from gitree import __version__
 
 
@@ -27,9 +26,9 @@ class GeneralOptionsService:
         """
 
         if config.init_config:
-            create_default_config(ctx)
+            Config.create_default_config(ctx)
         elif config.config_user:
-            open_config_in_editor(ctx)
+            Config.open_config_in_editor(ctx)
         elif config.version:
             print(__version__)
 
