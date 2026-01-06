@@ -60,6 +60,10 @@ def zip_project(
             )
 
             for entry in entries:
+                # Prevent infinite recursion: skip if entry is the output zip file itself
+                if entry.resolve() == zip_path:
+                    continue
+
                 if entry.is_dir():
                     rec(entry, rec_depth + 1, patterns)
                 else:
