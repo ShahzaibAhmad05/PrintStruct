@@ -1,42 +1,106 @@
 # tests/test_basic.py
+
+"""
+Code file for TestGeneralOptions class.
+
+If you find something missing here, it's most likely declared in the
+BaseCLISetup class, since this class inherits from that one.
+"""
+
 from tests.base_setup import BaseCLISetup
 
 
 class TestGeneralOptions(BaseCLISetup):
 
+    def test_no_arg(self):
+        """
+        Test if it is working without any CLI arguments. It should print
+        a tree structure (root name in this case), which includes the name "tmp"
+        """
+
+        # Vars
+        args_str = ""
+
+        # Test
+        result = self.run_gitree(args_str)
+
+        # Validate
+        self.assertEqual(0, result.returncode, 
+            msg="Failed default run. " +
+                f"Non-zero exit code: {result.returncode}")
+        
+        self.assertIn("tmp", result.stdout,
+            msg=self.failed_run_msg(args_str) +
+                f"'tmp' not found in output: \n\n{result.stdout}")
+        
+
     def test_version(self):
-        result = self._run_cli("--version")
+        """
+        Test if it prints the version. Should work for developer version too.
+        """
 
-        self.assertEqual(result.returncode, 0, msg=result.stderr)
-        self.assertTrue(result.stdout.strip())
-        self.assertIn(".", result.stdout)
+        # Vars
+        args_str = "--version"
 
+        # Test
+        result = self.run_gitree(args_str)
 
-    def test_init_config(self):
-        config_path = self.root / "config.json"
-
-        # Ensure config.json doesn't exist initially
-        self.assertFalse(config_path.exists(), "config.json should not exist before test")
-
-        result = self._run_cli("--init-config")
-
-        self.assertEqual(result.returncode, 0, msg=result.stderr)
-        self.assertTrue(config_path.exists(), "config.json was not created")
-
-        # Verify it's valid JSON with expected keys
-        import json
-        with open(config_path) as f:
-            config = json.load(f)
-
-        # Check for some expected default keys
-        self.assertIn("max_items", config)
-        self.assertIn("emoji", config)
-        self.assertIn("hidden_items", config)
+        # Validate
+        self.assertEqual(result.returncode, 0,
+            msg=self.failed_run_msg(args_str) +
+                self.non_zero_exitcode_msg(result.returncode))
+        
+        self.assertTrue(result.stdout.strip(),
+            msg=self.failed_run_msg(args_str) +
+                self.no_output_msg())
+        
+        self.assertIn(".", result.stdout,
+            msg=self.failed_run_msg(args_str) +
+                f"No dots found in the output: \n\n{result.stdout}")
 
 
     def test_verbose(self):
-        result = self._run_cli("--verbose")
+        """
+        Test if the logging utility is working properly, using --verbose.
+        """
 
-        self.assertEqual(result.returncode, 0, msg=result.stderr)
-        self.assertTrue(result.stdout.strip())
-        self.assertIn("LOG", result.stdout)
+        # Vars
+        args_str = "--verbose"
+
+        # Run
+        result = self.run_gitree(args_str)
+
+        # Validate
+        self.assertEqual(result.returncode, 0,
+            msg=self.failed_run_msg(args_str) + 
+            self.non_zero_exitcode_msg(result.returncode))
+        
+        self.assertTrue(result.stdout.strip(),
+            msg=self.failed_run_msg(args_str) +
+                self.no_output_msg())
+        
+        self.assertIn("LOG", result.stdout,
+            msg=self.failed_run_msg(args_str) + 
+                f"Expected str 'LOG' not found in output: \n\n{result.stdout}")
+
+
+    def test_init_config(self):
+        """
+        Test if the user config is being created properly.
+        """
+
+        # Vars
+        args_str = "--init-config"
+        config_path = self.root / ".gitree/config.json"
+
+        # Test
+        result = self.run_gitree(args_str)
+
+        # Validate
+        self.assertEqual(result.returncode, 0, 
+            msg=self.failed_run_msg(args_str) +
+            self.non_zero_exitcode_msg(result.returncode))
+        
+        self.assertTrue(config_path.exists(), 
+            msg=self.failed_run_msg(args_str) +
+            "config.json was not created")
