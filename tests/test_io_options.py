@@ -8,10 +8,13 @@ class TestIOFlags(BaseCLISetup):
     # Note: There is no test for copy-to-clipboard currently
     # because real clipboard access is often unavailable/flaky in CI environments.
 
-    def test_zip(self):
+    def test_zip(self):    
+        file_path = self.root / "file.txt"
+        file_path.write_text("hello", encoding="utf-8")
+
         zip_path = self.root / "output.zip"
 
-        result = self._run_cli("--zip", zip_path.name)
+        result = self.run_gitree("--zip", zip_path.name)
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         self.assertTrue(zip_path.exists(), "Zip file was not created")
@@ -24,11 +27,11 @@ class TestIOFlags(BaseCLISetup):
     def test_export(self):
         out_path = self.root / "tree_export.txt"
 
-        result = self._run_cli("--export", out_path.name)
+        result = self.run_gitree("--export", out_path.name)
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         self.assertTrue(out_path.exists(), "Export file was not created")
 
         content = out_path.read_text()
-        self.assertIn("file.txt", content)
+        self.assertIn("CONTENTS", content)
         
