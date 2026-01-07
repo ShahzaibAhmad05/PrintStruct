@@ -46,7 +46,6 @@ class ExportService:
     def _export_txt(ctx: AppContext, config: Config, tree_data: dict[str, Any]) -> list[str]:
         structure = ctx.output_buffer.get_value()
         out: list[str] = []
-        max_size_mb = getattr(config, "max_file_size_mb", 1.0)
 
         out.extend(structure)
         out.append("")
@@ -56,7 +55,7 @@ class ExportService:
             out.append("")
             out.append(f"FILE: {fp}")
             out.append("-" * (6 + len(str(fp))))
-            out.append(ExportService._read_text(fp, max_size_mb).rstrip("\n"))
+            out.append(ExportService._read_text(fp, config.max_file_size).rstrip("\n"))
 
         return out
 
@@ -65,7 +64,6 @@ class ExportService:
     def _export_md(ctx: AppContext, config: Config, tree_data: dict[str, Any]) -> list[str]:
         structure = ctx.output_buffer.get_value()
         out: list[str] = []
-        max_size_mb = getattr(config, "max_file_size_mb", 1.0)
 
         out.append("## Project Structure")
         out.extend(structure)       # Assuming structure is already in md format
@@ -76,7 +74,7 @@ class ExportService:
             out.append(f"### File: {fp}")
             out.append("")
             out.append("```text")
-            out.append(ExportService._read_text(fp, max_size_mb).rstrip("\n"))
+            out.append(ExportService._read_text(fp, config.max_file_size).rstrip("\n"))
             out.append("```")
             out.append("")
 
@@ -88,12 +86,11 @@ class ExportService:
         import json
 
         structure = ctx.output_buffer.get_value()
-        max_size_mb = getattr(config, "max_file_size_mb", 1.0)
 
         files = [
             {
                 "path": str(fp),
-                "content": ExportService._read_text(fp, max_size_mb),
+                "content": ExportService._read_text(fp, config.max_file_size),
             }
             for fp in ExportService._iter_files(tree_data)
         ]
@@ -157,14 +154,17 @@ class ExportService:
             if size_mb > max_size_mb:
                 return f"[file too large: {size_mb:.2f}mb]"
 
+
             # Check if binary (read first 8KB)
             with open(p, 'rb') as f:
                 chunk = f.read(min(8192, size_bytes))
                 if b'\x00' in chunk:  # Null byte indicates binary
                     return "[binary file]"
 
+
             # Read as text
             return p.read_text(encoding="utf-8", errors="ignore")
+
 
         except PermissionError:
             return "[permission denied]"

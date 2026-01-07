@@ -36,13 +36,13 @@ class CopyService:
         fmt = (getattr(config, "format", "") or "").strip().lower()
 
         if fmt in ("txt", "tree"):
-            lines = ExportService._export_txt(ctx, tree_data)
+            lines = ExportService._export_txt(ctx, config, tree_data)
 
         elif fmt == "md":
-            lines = ExportService._export_md(ctx, tree_data)
+            lines = ExportService._export_md(ctx, config, tree_data)
 
         elif fmt == "json":
-            lines = ExportService._export_json(ctx, tree_data)
+            lines = ExportService._export_json(ctx, config, tree_data)
 
         try:
             pyperclip.copy("\n".join(lines))

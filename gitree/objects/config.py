@@ -118,7 +118,7 @@ class Config:
             "no_contents": False,
             "no_contents_for": [],
             "override_files": True,
-            "max_file_size_mb": 1.0,
+            "max_file_size": 1.0,
 
             # Listing override options
             "no_gitignore": False,

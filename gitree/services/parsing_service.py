@@ -211,7 +211,7 @@ class ParsingService:
             default=argparse.SUPPRESS, metavar="PATH",
             help="Exclude contents for specific files")
         listing.add_argument("--max-file-size", type=float,
-            default=argparse.SUPPRESS, metavar="MB", dest="max_file_size_mb",
+            default=argparse.SUPPRESS, metavar="MB", dest="max_file_size",
             help="Maximum file size in MB to include in exports (default: 1.0)")
         listing.add_argument("--override-files", action="store_true",
             default=argparse.SUPPRESS, help="Override existing files") 
