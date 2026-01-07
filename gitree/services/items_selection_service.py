@@ -6,7 +6,7 @@ Code file for the ItemsSelectionService class.
 
 # default libs
 from typing import Any
-import os, sys, glob
+import os, glob
 from pathlib import Path
 
 # Deps from this project
@@ -49,7 +49,7 @@ class ItemsSelectionService:
         # Start from the parent dir and keep adding items recursively
         # includes resolving hidden_files, gitignore, include and exclude
         resolved_items, _ = ItemsSelectionService._resolve_items_rec(ctx, config, 
-            resolved_paths=resolved_root_paths[:-1], curr_depth=0, curr_entries=1,
+            resolved_paths=resolved_root_paths, curr_depth=0, curr_entries=1,
             gitignore_matcher=GitIgnoreMatcher(),
             curr_dir=resolved_root_paths[-1], include_paths=resolved_include_paths[:-1], 
             exclude_paths=resolved_exclude_paths[:-1])
@@ -83,7 +83,9 @@ class ItemsSelectionService:
 
             # If a glob pattern is provided
             if ItemsSelectionService._isglob(path_str):
-                matched_paths = glob.glob(path_str)
+
+                # Include underlying and hidden items as well
+                matched_paths = glob.glob(path_str, recursive=True, include_hidden=True)
 
                 # If the glob could not be resolved
                 if not matched_paths:
