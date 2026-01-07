@@ -4,7 +4,7 @@
 Code file for housing GitIgnore class
 """
 
-# Defualt libs
+# Default libs
 from pathlib import Path
 from typing import Iterable
 

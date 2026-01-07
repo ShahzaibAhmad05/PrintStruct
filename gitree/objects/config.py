@@ -5,11 +5,13 @@ Code file to house Config class.
 """
 
 # Default libs
-import argparse, json, os
+import argparse, json, os, sys, subprocess, platform
+from pathlib import Path
 from typing import Any
 
 # Deps from this project
 from .app_context import AppContext
+from ..utilities.logging_utility import Logger
 
 
 class Config:
@@ -24,9 +26,18 @@ class Config:
         self.cli: dict[str, Any] = vars(args)
 
 
+        # Disable user- and global-level configuration if --no-config is used
+        if hasattr(args, "no_config"):
+            self.user_cfg = {}
+            self.global_cfg = {}
+
+
     def _build_user_config(self) -> dict[str, Any]:
-        """ Returns a dict of the user config """
-        config_path = self._get_user_config_path()
+        """ 
+        Returns a dict of the user config, if available.
+        """
+
+        config_path = Config._get_user_config_path()
 
         # Make sure the configuration file has been setup
         if not os.path.exists(config_path): return {}
@@ -35,9 +46,40 @@ class Config:
             user_cfg = json.load(file)
 
         return user_cfg
+    
+
+    def _get(self, key: str) -> Any:
+        """
+        Returns the value of the key with the following precedence:
+
+        Precedence: CLI > user > global > defaults > fallback default
+        """
+
+        if key in self.cli:
+            return self.cli[key]
+        if key in self.user_cfg:
+            return self.user_cfg[key]
+        if key in self.global_cfg:
+            return self.global_cfg[key]
+        if key in self.defaults:
+            return self.defaults[key]
+        
+        raise KeyError      # If key was not in any of the dicts
 
 
-    def _build_default_config(self) -> dict[str, Any]:
+    def __getattr__(self, name: str) -> Any:
+        """
+        Allow attribute-style access:
+        cfg.max_items converted to cfg.get("max_items")
+        """
+        try:
+            return self._get(name)
+        except KeyError:
+            raise AttributeError(f"'Config' object has no attribute '{name}'")
+
+
+    @staticmethod
+    def _build_default_config() -> dict[str, Any]:
         """
         Returns the default configuration values.
 
@@ -84,43 +126,107 @@ class Config:
             "no_max_items": False,
             "no_max_entries": False,
 
-            # Inner tool behaviour control
+            # Inner tool control (not to be given to the user)
             "no_printing": False  
         }
     
 
-    def _get(self, key: str) -> Any:
-        """
-        Returns the value of the key with the following precedence:
+    @staticmethod
+    def _get_user_config_path() -> Path:
+        """ Return the default user config path for gitree """
+        path = Path(".gitree/config.json")
+        path.parent.mkdir(exist_ok=True, parents=True)
+        return path
 
-        Precedence: CLI > user > global > defaults > fallback default
-        """
-
-        if key in self.cli:
-            return self.cli[key]
-        if key in self.user_cfg:
-            return self.user_cfg[key]
-        if key in self.global_cfg:
-            return self.global_cfg[key]
-        if key in self.defaults:
-            return self.defaults[key]
-        
-        raise KeyError      # If key was not in any of the dicts
-    
 
     @staticmethod
-    def _get_user_config_path() -> str:
-        """ Return the default user config path for gitree """
-        return ".gitree/config.json"
-    
+    def create_default_config(ctx: AppContext) -> None:
+        """
+        Creates a default config.json file with all defaults.
+        """
+        config_path = Config._get_user_config_path()
 
-    def __getattr__(self, name: str) -> Any:
-        """
-        Allow attribute-style access:
-        cfg.max_items converted to cfg.get("max_items")
-        """
+
+        # Get default config values
+        config = Config._build_default_config()
+
+        # Delete "system/cli only" keys from the config dict
+        del config["no_printing"]
+        del config["version"]
+        del config["init_config"]
+        del config["no_config"]
+
+
         try:
-            return self._get(name)
-        except KeyError:
-            raise AttributeError(f"'Config' object has no attribute '{name}'")
+            # Override the config file if exists (useful for replacing corrupted config file)
+            if config_path.exists(): ctx.logger.log(Logger.WARNING, 
+                "Config file already exists. This will be overriden.")
+
+
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=4, ensure_ascii=False)
+                f.write('\n')
+
+
+            ctx.logger.log(Logger.DEBUG, f"Created config.json at {config_path.absolute()}")
+            ctx.logger.log(Logger.DEBUG, 
+                "Edit this file to customize default settings for this project.")
+
+        except Exception as e:
+            ctx.logger.log(Logger.ERROR, f"Could not create config.json: {e}")
+
+
+    @staticmethod
+    def open_config_in_editor(ctx: AppContext) -> None:
+        """
+        Opens config.json in the default text editor.
+        """
+        config_path = Config._get_user_config_path()
+
+        # Create config if it doesn't exist
+        if not config_path.exists():
+            ctx.logger.log(Logger.INFO, f"config.json not found. Creating default config...")
+            Config.create_default_config(ctx)
+
+        # Try to get editor from environment variable first
+        editor = os.environ.get('EDITOR') or os.environ.get('VISUAL')
+
+        try:
+            if editor:
+                # Use user's preferred editor from environment
+                subprocess.run([editor, str(config_path)], check=True)
+
+            else:
+                # Fall back to platform-specific default text editor
+                ctx.logger.log(Logger.WARNING, 
+                    "No text editor found, fallback to platform-specific editors")
+                system = platform.system()
+
+
+                if system == "Darwin":  # macOS
+                    # Use -t flag to open in default text editor, not browser
+                    subprocess.run(["open", "-t", str(config_path)], check=True)
+                elif system == "Linux":
+                    # Try common editors in order of preference
+                    for cmd in ["xdg-open", "nano", "vim", "vi"]:
+                        try:
+                            subprocess.run([cmd, str(config_path)], check=True)
+                            break
+                        except FileNotFoundError:
+                            continue
+                    else:
+                        raise Exception("No suitable text editor found")
+                    
+                elif system == "Windows":
+                    # Use notepad as default text editor
+                    subprocess.run(["notepad", str(config_path)], check=True)
+
+                else:
+                    ctx.logger.log(Logger.ERROR, f"Unsupported platform: {system}")
+
+        except Exception as e:
+            ctx.logger.log(Logger.ERROR, f"Could not open editor: {e}")
+            ctx.logger.log(Logger.ERROR, f"Please manually open: {config_path.absolute()}")
+            ctx.logger.log(Logger.ERROR,
+                f"Or set your EDITOR environment variable to your preferred editor.")
         
