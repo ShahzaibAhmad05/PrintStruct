@@ -4,11 +4,17 @@ from tests.base_setup import BaseCLISetup
 
 class TestListingControlFlags(BaseCLISetup):
     """
-    Test class for listing control flags (--no-* flags).
-    These flags control what gets displayed in the tree output.
+    Tests listing control flags (--no-* flags) that modify tree output.
+    Includes:
+        - --no-files: hide files from the output
+        - --no-color: disables ANSI color codes in output
     """
 
     def test_no_files(self):
+        """
+        Verify that the --no-files flag correctly hides files from
+        the directory tree output.
+        """
         result = self.run_gitree("--no-files")
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
@@ -17,6 +23,10 @@ class TestListingControlFlags(BaseCLISetup):
 
 
     def test_no_color(self):
+        """
+        Verify that the --no-color flag disables ANSI color codes
+        in the directory tree output while default output still includes color.
+        """
         # Create additional structure
         (self.root / ".hidden_file").write_text("hidden")
 

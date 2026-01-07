@@ -4,13 +4,35 @@ from tests.base_setup import BaseCLISetup
 
 
 class TestListingFlags(BaseCLISetup):
+    """
+    Tests directory listing CLI flags, including:
+        - Displaying file and folder emojis (--emoji)
+        - Limiting tree depth (--max-depth)
+        - Showing hidden files & folders (--hidden-items)
+        - Ordering files before folders (--files-first)
+        - Inclusion overrides that bypass .gitignore (--include)
+    """
 
     @staticmethod
     def __build_name_with_emoji(file_name: str, emoji: str):
+        """
+        Helper to prefix a file or folder name with an emoji.
+
+        Args:
+            file_name (str): Name fo the file or folder
+            emoji (str): Emoji string to append
+
+        Returns:
+            str: Emoji-prefixed name
+        """
         return emoji + " " + file_name
 
 
     def test_emoji(self):
+        """
+        Verify that the --emoji flag correctly prefixes files and folders
+        with the appropriate emojis, including empty and normal directories.
+        """
         file_path = self.root / "file.txt"
         file_path.write_text("hello", encoding="utf-8")
         # Create empty and simple directories to test both emojis
@@ -24,6 +46,10 @@ class TestListingFlags(BaseCLISetup):
 
 
     def test_max_depth(self):
+        """
+        Verity that the --max-depth flag limits the depth of the
+        displayed directory tree.
+        """
         result = self.run_gitree("--max-depth", "1")
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
@@ -31,6 +57,10 @@ class TestListingFlags(BaseCLISetup):
 
 
     def test_hidden_items(self):
+        """
+        Verify that hidden files and directories are shown only when
+        the --hidden-items flag is used.
+        """
         # Create hidden files and directories
         (self.root / ".hidden_file.txt").write_text("hidden")
         (self.root / ".hidden_dir").mkdir()
@@ -55,6 +85,10 @@ class TestListingFlags(BaseCLISetup):
 
 
     def test_files_first(self):
+        """
+        Verify that the --files-first flag causes files to be listed
+        before folders in the directory tree output.
+        """
         # Create a folder and a file
         tmp_dir = "random_dir"
         tmp_file = "random_file.txt"
@@ -77,6 +111,10 @@ class TestListingFlags(BaseCLISetup):
 
 
     def test_include_overrides_gitignore(self):
+        """
+        Verify that the --include flag can override .gitignore rules,
+        ensuing ignored files are still included if explicitly specified.
+        """
         # Create .gitignore that ignores .py files
         (self.root / ".gitignore").write_text("*.py\n*.log\n")
         (self.root / "script.py").write_text("python")

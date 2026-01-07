@@ -64,7 +64,7 @@ class BaseCLISetup(unittest.TestCase):
         """
 
         return f"Failed run '{self.base_call} {args_str}'. "
-    
+
 
     def non_zero_exitcode_msg(self, exitcode: int) -> str:
         """
@@ -72,12 +72,12 @@ class BaseCLISetup(unittest.TestCase):
         """
 
         return f"Non-zero exit code: '{exitcode}'. "
-    
-    
+
+
     def no_output_msg(self) -> str:
         """
         Generate message for the no-output issue.
         """
 
         return "No output from the tool. "
-    
+
