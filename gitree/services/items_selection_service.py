@@ -1,7 +1,7 @@
-# gitree/services/resolve_items_service.py
+# gitree/services/items_selection_service.py
 
 """
-Code file for the ResolveItemsService class.
+Code file for the ItemsSelectionService class.
 """
 
 # default libs
@@ -17,7 +17,7 @@ from ..utilities.logging_utility import Logger
 from ..utilities.gitignore_utility import GitIgnoreMatcher
 
 
-class ResolveItemsService:
+class ItemsSelectionService:
     """
     Static class for resolving the args and forming an items dict.
     """
@@ -32,11 +32,11 @@ class ResolveItemsService:
 
         # Resolve all the root paths first
         # NOTE: the root path is appended at the end of the list of resolved paths
-        resolved_root_paths = ResolveItemsService._resolve_given_paths(
+        resolved_root_paths = ItemsSelectionService._resolve_given_paths(
             ctx, config, config.paths)
-        resolved_include_paths = ResolveItemsService._resolve_given_paths(
+        resolved_include_paths = ItemsSelectionService._resolve_given_paths(
             ctx, config, config.include)
-        resolved_exclude_paths = ResolveItemsService._resolve_given_paths(
+        resolved_exclude_paths = ItemsSelectionService._resolve_given_paths(
             ctx, config, config.exclude)
         
 
@@ -48,7 +48,7 @@ class ResolveItemsService:
 
         # Start from the parent dir and keep adding items recursively
         # includes resolving hidden_files, gitignore, include and exclude
-        resolved_items, _ = ResolveItemsService._resolve_items_rec(ctx, config, 
+        resolved_items, _ = ItemsSelectionService._resolve_items_rec(ctx, config, 
             resolved_paths=resolved_root_paths[:-1], curr_depth=0, curr_entries=1,
             gitignore_matcher=GitIgnoreMatcher(),
             curr_dir=resolved_root_paths[-1], include_paths=resolved_include_paths[:-1], 
@@ -82,7 +82,7 @@ class ResolveItemsService:
         for path_str in attr:
 
             # If a glob pattern is provided
-            if ResolveItemsService._isglob(path_str):
+            if ItemsSelectionService._isglob(path_str):
                 matched_paths = glob.glob(path_str)
 
                 # If the glob could not be resolved
@@ -154,14 +154,14 @@ class ResolveItemsService:
 
 
             # Check if it is not a hidden file/dir or hidden-items flag is used
-            if (config.hidden_items or not ResolveItemsService._ishidden(item_path)):
+            if (config.hidden_items or not ItemsSelectionService._ishidden(item_path)):
 
                 # Check if the item is in resolved paths, or in include paths
-                if ResolveItemsService._isunder(item_path, resolved_paths + include_paths):
+                if ItemsSelectionService._isunder(item_path, resolved_paths + include_paths):
 
                     # Check if the item is defined by an include pattern
                     # Or if there is a gitignore that says it is excluded
-                    if (not ResolveItemsService._isunder(item_path, exclude_paths) 
+                    if (not ItemsSelectionService._isunder(item_path, exclude_paths) 
                         and (not curr_depth > config.gitignore_depth and 
                             not gitignore_matcher.excluded(item_path))):    
                         
@@ -174,7 +174,7 @@ class ResolveItemsService:
         for idx, item_path in enumerate(resolved_root["children"]):
             # Resolve for the item only if it is a directory
             if item_path.is_dir():
-                resolved_root["children"][idx], curr_entries = ResolveItemsService._resolve_items_rec(ctx, config, resolved_paths=resolved_paths, curr_entries=curr_entries,
+                resolved_root["children"][idx], curr_entries = ItemsSelectionService._resolve_items_rec(ctx, config, resolved_paths=resolved_paths, curr_entries=curr_entries,
                     curr_dir=item_path, include_paths=include_paths, 
                     gitignore_matcher=gitignore_matcher,
                     exclude_paths=exclude_paths, curr_depth=curr_depth+1)  

@@ -155,6 +155,7 @@ class Config:
         del config["version"]
         del config["init_config"]
         del config["no_config"]
+        del config["config_user"]
 
 
         try:

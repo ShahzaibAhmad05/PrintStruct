@@ -20,9 +20,6 @@ assignees: ''
 
 - describe the refactoring approach in bullet points
 
-## Expected Benefits
-
-- describe the improvements after refactoring
 
 > [!NOTE]
 > **CONTRIBUTIONS ARE WELCOME!**

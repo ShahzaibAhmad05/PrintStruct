@@ -12,7 +12,7 @@ if sys.platform.startswith('win'):      # fix windows unicode error on CI
 # Deps from this project
 from .services.parsing_service import ParsingService
 from .services.general_options_service import GeneralOptionsService
-from .services.resolve_items_service import ResolveItemsService
+from .services.items_selection_service import ItemsSelectionService
 from .services.drawing_service import DrawingService
 from .services.zipping_service import ZippingService
 from .services.export_service import ExportService
@@ -67,8 +67,8 @@ def main() -> None:
 
 
     # This service returns all the items to include resolved in a dict
-    # Hover over ResolveItemsService to check the format which it returns
-    resolved_root = ResolveItemsService.resolve_items(ctx, config)
+    # Hover over ItemsSelectionService to check the format which it returns
+    resolved_root = ItemsSelectionService.resolve_items(ctx, config)
 
 
     # Select files interactively if requested
