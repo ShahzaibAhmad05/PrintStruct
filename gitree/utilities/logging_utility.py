@@ -4,6 +4,8 @@
 Code file for housing Logger and OutputBuffer classes.
 """
 
+from ..utilities.color_utility import Color
+
 
 class Logger:
     """
@@ -112,7 +114,20 @@ class Logger:
             The message prefixed with the log level
         """
 
-        return f"[{self._LEVEL_NAMES[level]}] {message}"
+        label = self._LEVEL_NAMES[level]
+
+        if level == self.DEBUG:
+            colored_label = Color.blue(f"[{label}]")
+        elif level == self.INFO:
+            colored_label = Color.green(f"[{label}]")
+        elif level == self.WARNING:
+            colored_label = Color.yellow(f"[{label}]")
+        elif level == self.ERROR:
+            colored_label = Color.red(f"[{label}]")
+        else:
+            colored_label = f"[{label}]"
+
+        return f"{colored_label} {message}"
 
 
 class OutputBuffer(Logger):
