@@ -6,7 +6,7 @@ Code file for the ItemsSelectionService class.
 
 # default libs
 from typing import Any
-import os, glob
+import os, glob, time
 from pathlib import Path
 
 # Deps from this project
@@ -22,12 +22,15 @@ class ItemsSelectionService:
     Static class for resolving the args and forming an items dict.
     """
 
-    def resolve_items(ctx: AppContext, config: Config) -> dict[str, Any]:
+    def resolve_items(ctx: AppContext, config: Config, start_time: float) -> dict[str, Any]:
         """
         Resolves the items to include in the output using the config object.
 
+        Args:
+            start_time (float): relative time value to log performance of the service
+
         Returns:
-            dict[str, Any]: A dict of the resolved items
+            dict: A dict of the resolved items
         """
 
         # Resolve all the root paths first
@@ -38,6 +41,8 @@ class ItemsSelectionService:
             ctx, config, config.include)
         resolved_exclude_paths = ItemsSelectionService._resolve_given_paths(
             ctx, config, config.exclude)
+        ctx.logger.log(Logger.INFO, 
+            f"Selected roots, includes, excludes at: {round((time.time()-start_time)*1000, 2)} ms")
         
 
         # Safety check to avoid crashes on no paths found
