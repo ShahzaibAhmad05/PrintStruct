@@ -114,21 +114,38 @@ class ParsingService:
     @staticmethod
     def _examples_text() -> str:
         return """
-            Examples:
+            Usage:
+            - gitree first selects the items (files/dirs) using the path 
+                given, then decides whether to zip/export the project
+                (with contents), or to just print the tree structure of the
+                project.
+
+            - It respects gitignore rules by default unless --no-gitignore
+                is used.
+        
+                
+            Use-case Examples:
+
             gitree
-                Print tree of current directory
+                Print tree structure of current directory
 
-            gitree src --max-depth 2
-                Print tree for 'src' directory up to depth 2
+            gitree tests/*.py --copy
+                Select all .py files under the folder tests and 
+                copy their contents along with the tree structure,
+                useful for pasting codebase context to LLMs.
 
-            gitree . --exclude *.pyc __pycache__
-                Exclude compiled Python files
+            gitree tests .github
+                Select items only under these two folders, find 
+                their parent folder, and print the tree structure
+                for those.
 
-            gitree --export tree.json --no-contents
-                Export tree as JSON without file contents
+            gitree --export proj --format json
+                Export all items and their contents under the current 
+                directory in a file named proj.json
 
-            gitree --zip project.zip src/
-                Create a zip archive from src directory
+            gitree --zip project
+                Create a zip named project.zip of the whole project 
+                respecting gitignore rules.
         """.strip()
 
 
@@ -138,23 +155,36 @@ class ParsingService:
             "paths",
             nargs="*",
             default=["."],
-            help="Root paths (supports multiple directories and file patterns)",
+            help="Root paths (supports multiple directories and file patterns), "
+                "defaults to the current working directory",
         )
 
 
     @staticmethod
     def _add_general_options(ctx: AppContext, ap: argparse.ArgumentParser):
         general = ap.add_argument_group("general options")
+        
         general.add_argument("-v", "--version", action="store_true", 
-            default=argparse.SUPPRESS, help="Display the version of the tool")
+            default=argparse.SUPPRESS, 
+            help="Display the version number of the tool")
+        
         general.add_argument("--init-config", action="store_true", 
             default=argparse.SUPPRESS, help="Create a default config.json file")
+        
         general.add_argument("--config-user", action="store_true", 
-            default=argparse.SUPPRESS, help="Open config.json in the default editor")
+            default=argparse.SUPPRESS, 
+            help="Create a default config.json file in the current directory"
+                " and open that file in the default editor")
+        
         general.add_argument("--no-config", action="store_true", 
-            default=argparse.SUPPRESS, help="Ignore config.json and use defaults")
+            default=argparse.SUPPRESS, 
+            help="Ignore both user-level and global-level config.json and use"
+                " default and cli values for configuration")
+        
         general.add_argument("--verbose", action="store_true", 
-            default=argparse.SUPPRESS, help="Enable verbose output")
+            default=argparse.SUPPRESS, 
+            help="Enable logger output to the console. Enabling this prints a log"
+            " after the full workflow run. Helpful for debugging.")
 
 
     @staticmethod
@@ -162,9 +192,13 @@ class ParsingService:
         io = ap.add_argument_group("output & export options")
 
         io.add_argument("-z", "--zip", 
-            default=argparse.SUPPRESS, help="Create a zip archive of the given path")
+            default=argparse.SUPPRESS, 
+            help="Create a zip archive of the given directory respecting gitignore rules.")
+        
         io.add_argument("--export", 
-            default=argparse.SUPPRESS, help="Save tree structure to file")
+            default=argparse.SUPPRESS, 
+            help="Save project structure along with it's contents to a file"
+                " with the format specified using --format")
 
 
     @staticmethod
@@ -175,44 +209,66 @@ class ParsingService:
             default="txt", help="Format output only")
         
         listing.add_argument("--max-items", type=max_items_int, 
-            default=argparse.SUPPRESS, help="Limit items per directory")
+            default=argparse.SUPPRESS, 
+            help="Limit items to be selected per directory")
+        
         listing.add_argument("--max-entries", type=max_entries_int, 
-            default=argparse.SUPPRESS, help="Limit entries shown in tree output")
+            default=argparse.SUPPRESS, 
+            help="Limit entries (files/dirs) to be selected for the overall output")
+        
         listing.add_argument("--max-depth", type=int, 
-            default=argparse.SUPPRESS, help="Maximum depth to traverse")
+            default=argparse.SUPPRESS, 
+            help="Maximum depth to traverse when selecting files")
+        
         listing.add_argument("--gitignore-depth", type=int, 
-            default=argparse.SUPPRESS, help="Limit depth for .gitignore processing")
+            default=argparse.SUPPRESS, 
+            help="Limit depth to look for during .gitignore processing")
         
         listing.add_argument("--hidden-items", action="store_true", 
             default=argparse.SUPPRESS, help="Show hidden files and directories")
+        
         listing.add_argument("--exclude", nargs="*", 
-            default=argparse.SUPPRESS, help="Patterns of files to exclude")
+            default=argparse.SUPPRESS, help="Patterns of files to specifically exclude")
+        
         listing.add_argument("--exclude-depth", type=int, 
             default=argparse.SUPPRESS, help="Limit depth for exclude patterns")
+        
         listing.add_argument("--include", nargs="*", 
-            default=argparse.SUPPRESS, help="Patterns of files to include")
+            default=argparse.SUPPRESS, help="Patterns of files to specifically include")
+        
         listing.add_argument("--include-file-types", "--include-file-type", nargs="*", 
             default=argparse.SUPPRESS, dest="include_file_types", 
             help="Include files of certain types")
+        
         listing.add_argument("-c", "--copy", action="store_true", 
-            default=argparse.SUPPRESS, help="Copy output to clipboard")
+            default=argparse.SUPPRESS, 
+            help="Copy file contents and project structure to clipboard."
+                " Similar to --export but copies to the clipboard instead")
+        
         listing.add_argument("-e", "--emoji", action="store_true", 
-            default=argparse.SUPPRESS, help="Show emojis")
+            default=argparse.SUPPRESS, help="Show emojis in the output")
+        
         listing.add_argument("-i", "--interactive", action="store_true", 
-            default=argparse.SUPPRESS, help="Interactive mode")
+            default=argparse.SUPPRESS, 
+            help="Use interactive mode for further file selection")
         
         listing.add_argument("--files-first", action="store_true", 
             default=argparse.SUPPRESS, help="Print files before directories")
+        
         listing.add_argument("--no-color", action="store_true", 
-            default=argparse.SUPPRESS, help="Disable color output")
+            default=argparse.SUPPRESS, help="Disable colored output")
+        
         listing.add_argument("--no-contents", action="store_true", 
-            default=argparse.SUPPRESS, help="Don't include file contents")
+            default=argparse.SUPPRESS, help="Don't include file contents in export/copy")
+        
         listing.add_argument("--no-contents-for", nargs="+",
             default=argparse.SUPPRESS, metavar="PATH",
-            help="Exclude contents for specific files")
+            help="Exclude contents for specific files for export/copy")
+        
         listing.add_argument("--max-file-size", type=float,
             default=argparse.SUPPRESS, metavar="MB", dest="max_file_size",
             help="Maximum file size in MB to include in exports (default: 1.0)")
+        
         listing.add_argument("--override-files", action="store_true",
             default=argparse.SUPPRESS, help="Override existing files") 
 
@@ -222,10 +278,13 @@ class ParsingService:
         listing_control = ap.add_argument_group("listing override options")
 
         listing_control.add_argument("--no-max-entries", action="store_true", 
-            default=argparse.SUPPRESS, help="Disable max entries limit")
-        listing_control.add_argument("--no-gitignore", action="store_true", 
-            default=argparse.SUPPRESS, help="Ignore .gitignore rules")
+            default=argparse.SUPPRESS, help="Disable --max-entries limit")
+        
         listing_control.add_argument("--no-max-items", action="store_true", 
-            default=argparse.SUPPRESS, help="Show all items regardless of count")
+            default=argparse.SUPPRESS, help="Disable --max-items limit")
+        
+        listing_control.add_argument("--no-gitignore", action="store_true", 
+            default=argparse.SUPPRESS, help="Do not use .gitignore rules")
+        
         listing_control.add_argument("--no-files", action="store_true", 
-            default=argparse.SUPPRESS, help="Hide files (only directories)")
+            default=argparse.SUPPRESS, help="Hide files (show only directories)")
