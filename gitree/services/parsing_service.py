@@ -114,21 +114,38 @@ class ParsingService:
     @staticmethod
     def _examples_text() -> str:
         return """
-            Examples:
+            Usage:
+            - gitree first selects the items (files/dirs) using the path 
+                given, then decides whether to zip/export the project
+                (with contents), or to just print the tree structure of the
+                project.
+
+            - It respects gitignore rules by default unless --no-gitignore
+                is used.
+        
+                
+            Use-case Examples:
+
             gitree
-                Print tree of current directory
+                Print tree structure of current directory
 
-            gitree src --max-depth 2
-                Print tree for 'src' directory up to depth 2
+            gitree tests/*.py --copy
+                Select all .py files under the folder tests and 
+                copy their contents along with the tree structure,
+                useful for pasting codebase context to LLMs.
 
-            gitree . --exclude *.pyc __pycache__
-                Exclude compiled Python files
+            gitree tests .github
+                Select items only under these two folders, find 
+                their parent folder, and print the tree structure
+                for those.
 
-            gitree --export tree.json --no-contents
-                Export tree as JSON without file contents
+            gitree --export proj --format json
+                Export all items and their contents under the current 
+                directory in a file named proj.json
 
-            gitree --zip project.zip src/
-                Create a zip archive from src directory
+            gitree --zip project
+                Create a zip named project.zip of the whole project 
+                respecting gitignore rules.
         """.strip()
 
 
