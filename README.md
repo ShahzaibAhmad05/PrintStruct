@@ -312,7 +312,7 @@ In addition to the directory path, the following options are available:
 
 ## 📝 File Contents in Exports
 
-When using `--json`, `--txt`, or `--md` flags, **file contents are included by default**. This feature:
+When using `--json`, `--tree`, or `--md` flags, **file contents are included by default**. This feature:
 
 - ✅ Includes **text file contents** (up to 1MB per file)
 - ✅ Detects and marks **binary files** as `[binary file]`

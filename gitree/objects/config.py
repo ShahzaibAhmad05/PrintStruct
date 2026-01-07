@@ -100,7 +100,7 @@ class Config:
             "export": "",
 
             # Listing options
-            "format": "txt",
+            "format": "tree",
             "max_items": 20,
             "max_entries": 40,
             "max_depth": 5,

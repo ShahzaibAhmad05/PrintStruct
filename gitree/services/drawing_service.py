@@ -35,7 +35,7 @@ class DrawingService:
             tree_data (dict[str, Any]): The resolved tree dict to draw
         """
 
-        if config.format == "txt":
+        if config.format == "tree":
             DrawingService._draw_tree(ctx, config, tree_data)
 
         elif config.format == "md":

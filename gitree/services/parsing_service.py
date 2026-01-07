@@ -79,7 +79,7 @@ class ParsingService:
         if getattr(args, "export", None) is not None:
             args.export = ParsingService._fix_output_path(
                 ctx, args.export,
-                default_extensions={"txt": ".txt", "json": ".json", "md": ".md"},
+                default_extensions={"tree": ".txt", "json": ".json", "md": ".md"},
                 format_str=args.format
             )
 
@@ -171,9 +171,9 @@ class ParsingService:
     def _add_listing_flags(ctx: AppContext, ap: argparse.ArgumentParser):
         listing = ap.add_argument_group("listing options")
 
-        listing.add_argument("--format", choices=["txt", "json", "md"], 
-            default="txt", help="Format output only")
-        
+        listing.add_argument("--format", choices=["tree", "json", "md"], 
+            default="tree", help="Format output only")
+
         listing.add_argument("--max-items", type=max_items_int, 
             default=argparse.SUPPRESS, help="Limit items per directory")
         listing.add_argument("--max-entries", type=max_entries_int, 

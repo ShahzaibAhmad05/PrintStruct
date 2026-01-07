@@ -24,7 +24,7 @@ class ExportService:
         fmt = (getattr(config, "format", "") or "").strip().lower()
         output_path = Path(config.export)
 
-        if fmt in ("txt", "tree"):
+        if fmt == "tree":
             lines = ExportService._export_txt(ctx, config, tree_data)
 
         elif fmt == "md":
