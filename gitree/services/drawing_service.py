@@ -25,7 +25,7 @@ class DrawingService:
     """
 
     @staticmethod
-    def draw(ctx: AppContext, config: Config, tree_data: dict[str, Any]) -> None:
+    def run(ctx: AppContext, config: Config, tree_data: dict[str, Any]) -> None:
         """
         Wrapper function to call the drawing based on config.format
 
