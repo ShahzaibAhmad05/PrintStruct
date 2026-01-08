@@ -89,7 +89,7 @@ def main() -> None:
             f"Left ZippingService at: {round((time.time()-start_time)*1000, 2)} ms")
 
     else:
-        DrawingService.draw(ctx, config, resolved_root)
+        DrawingService.run(ctx, config, resolved_root)
         ctx.logger.log(Logger.INFO, 
             f"Left DrawingService at: {round((time.time()-start_time)*1000, 2)} ms")
         
