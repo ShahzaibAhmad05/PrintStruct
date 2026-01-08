@@ -1,6 +1,6 @@
 # gitree 🌴
 
-**A git-aware CLI tool to provide LLM context for coding projects by combining project files into a single file with a number of different formats to choose from.**
+**A CLI tool to provide LLM context for coding projects by combining project files into a single file with a number of different formats to choose from.**
 
 <br>
 
@@ -17,29 +17,6 @@
 
 ---
 
-## ✨ Features
-
-| Feature                           | Description                                                                   |
-| --------------------------------- | ----------------------------------------------------------------------------- |
-| 📊 **Project Tree Visualization** | Generate clean directory trees with customizable depth and formatting         |
-| 🗜️ **Smart Zipping**              | Create project archives that automatically respect `.gitignore` rules         |
-| 🎯 **Flexible Filtering**         | Control what's shown with custom ignore patterns, depth limits, and item caps |
-| 🔍 **Gitignore Integration**      | Use `.gitignore` files at any depth level, or disable entirely when needed    |
-| 📋 **Multiple Export Formats**    | Export to files, copy to clipboard, or display with emoji icons               |
-| 📁 **Directory-Only View**        | Show just the folder structure without files for high-level overviews         |
-| 📈 **Project Summary**            | Display file and folder counts at each directory level with summary mode      |
-
----
-
-## 🔥 The problems it solves:
-
-- **sharing project structure** in issues or pull requests
-- **generating directory trees** for documentation
-- **pasting project layouts** into **LLMs**
-- **converting entire codebases** to a **single json file** using `.gitignore` for prompting LLMs.
-
----
-
 ## 📦 Installation
 
 Install using **pip** (python package manager):
@@ -47,10 +24,6 @@ Install using **pip** (python package manager):
 ```bash
 # Install the latest version using pip
 pip install gitree
-
-# Get the stable version instead (older, lacks features)
-pip install gitree==0.1.3
-
 ```
 
 ---
@@ -60,56 +33,26 @@ pip install gitree==0.1.3
 To use this tool, refer to this **format**:
 
 ```bash
-gitree [path] [other CLI args/flags]
-
+gitree [paths] [other CLI args/flags]
 ```
+
+**To literally get started, I would recommend doing this:**
 
 Open a terminal in any project and run:
 
 ```bash
-# path should default to .
+# paths should default to .
+# This will scan gitignores by default
 gitree
-
 ```
 
-Example output:
-
-```text
-Gitree
-├─ gitree/
-│  ├─ constants/
-│  │  ├─ __init__.py
-│  │  └─ constant.py
-│  ├─ services/
-│  │  ├─ __init__.py
-│  │  ├─ draw_tree.py
-│  │  ├─ list_enteries.py
-│  │  ├─ parser.py
-│  │  └─ zip_project.py
-│  ├─ utilities/
-│  │  ├─ __init__.py
-│  │  ├─ gitignore.py
-│  │  └─ utils.py
-│  ├─ __init__.py
-│  └─ main.py
-├─ CODE_OF_CONDUCT.md
-├─ CONTRIBUTING.md
-├─ LICENSE
-├─ pyproject.toml
-├─ README.md
-├─ requirements.txt
-└─ SECURITY.md
-
-```
-
-Using **emojis** as file/directory icons:
+Now try this for better visuals:
 
 ```bash
 gitree --emoji
-
 ```
 
-Example output:
+You _should_ see an output like this:
 
 ```text
 Gitree
@@ -136,80 +79,78 @@ Gitree
 ├─ 📄 README.md
 ├─ 📄 requirements.txt
 └─ 📄 SECURITY.md
-
 ```
 
-For **zipping** a directory:
+Some useful commands you can use everyday with this tool:
 
 ```bash
-gitree --zip out
-
+# Copy all C++ code in your project, 
+# with interactive selection for those files
+gitree **/*.cpp --copy -i
 ```
-
-creates **out.zip** in the same directory.
-
-For **combining interactive selection with export**:
 
 ```bash
-gitree --export project -i
-
+# Zip the whole project files (respecting gitignore)
+# creates project.zip in the same directory
+gitree --zip project
 ```
 
-This allows you to interactively select files and save the export to **project.txt**.
+```bash
+# Export the file contents of your project, in different formats to choose from
+gitree --export project --format tree
+gitree --export project --format json
+gitree --export project --format md
+```
 
 ---
 
-## 🧭 Interactive Mode
-
-Gitree supports an **interactive mode** that allows you to select files and directories step-by-step instead of relying only on CLI flags.
-
-> [!TIP] > **This is useful when:**
->
-> - you want **fine-grained control** over included files
-> - you prefer a **guided terminal-based selection flow**
-> - you want to **explore a project** before exporting its structure
-
-### Enable Interactive Mode
-
-Use the `-i` or `--interactive` flag:
-
-```bash
-gitree --interactive
-# or
-gitree -i
+## How it Works
 
 ```
-
-### How It Works
-
-When interactive mode is enabled, **Gitree** will:
-
-1. **Scan** the project directory (respecting `.gitignore`)
-2. **Present** an interactive file and folder selection menu
-3. **Allow** you to choose what to include or exclude
-4. **Generate** output based on your selections
-
-### Interactive Controls
-
-During interactive selection, the following **keys** are supported:
-
-- **↑ / ↓** — navigate items
-- **Space** — select / deselect item
-- **Enter** — confirm selection
-- **Esc / Ctrl+C** — exit interactive mode
-
-### Example
-
-```bash
-gitree -i --emoji --out context.txt
+    ╭────────────────────────────╮
+    │           Start            │
+    ╰────────────────────────────╯
+                  │
+                  ▼
+    ╭────────────────────────────╮
+    │      Argument Parsing      │
+    ╰────────────────────────────╯
+                  │
+                  ▼
+    ╭────────────────────────────╮
+    │  Files/Folders Selection   │
+    ╰────────────────────────────╯
+                  │
+                  ▼
+    ╭────────────────────────────╮
+    │   Interactive Selection    │
+    │      (only if used)        │
+    ╰────────────────────────────╯
+            │
+            ├─────────────────────────┐
+            │                         │
+            ▼                         ▼
+    ╭─────────────────╮    ╭─────────────────────╮
+    │ Zipping Service │    │   Drawing Service   │
+    ╰─────────────────╯    ╰─────────────────────╯
+            │                  │
+            │                  ├────────────────────┐
+            │                  │                    │
+            │                  ▼                    ▼
+            │         ╭─────────────────╮  ╭──────────────────╮
+            │         │  Copy Service   │  │  Export Service  │
+            │         ╰─────────────────╯  ╰──────────────────╯
+            │                  │                    │
+            │                  └──────────┬─────────┘
+            │                             │
+            └─────────────────────────────┘
+                           │
+                           ▼
+               ╭────────────────────────╮
+               │    Output & Finish     │
+               ╰────────────────────────╯
 
 ```
-
-This will:
-
-- launch **interactive selection**
-- display output using **emojis**
-- save the result to `context.txt`
 
 ---
 
@@ -219,10 +160,22 @@ To update the tool, type:
 
 ```bash
 pip install -U gitree
-
 ```
 
 Pip will automatically replace the older version with the **latest release**.
+
+---
+
+## ✨ Overall Features
+
+| Feature                           | Description                                                                   |
+| --------------------------------- | ----------------------------------------------------------------------------- |
+| **Tree Visualization** | Generate a structure for any directory for visualizing and understanding the codebase |
+| **Smart File Selection** | Control what's selected by the tool with custom ignore patterns, depth limits, and item caps |
+| **Interactive Selection** | Gain full control of the output by reviewing what's selected by the file selection service |
+| **Copy Your Codebase** | Instantly copy the whole codebase file contents to your clipboard to paste into LLMs |
+| **Multiple Export Formats** | Export your codebase contents to files using tree, json and markdown formats |
+| **Zipping the Whole Project** | Create project archives that automatically respect `.gitignore` rules |
 
 ---
 
@@ -236,35 +189,16 @@ Gitree uses **Continuous Integration (CI)** to ensure code quality and prevent r
 - Verifies that all **CLI arguments** work as expected
 - Ensures the tool **behaves consistently** across updates
 
-### Current Test Coverage
-
-| Test Type          | Description                                       |
-| ------------------ | ------------------------------------------------- |
-| CLI Argument Tests | Validates all supported CLI flags and options     |
-| Workflow Checks    | Ensures PRs follow required checks before merging |
-
 > [!NOTE]
 > CI tests are continuously expanding as new features are added.
 
 ---
 
-### Implementation details
-
-The CI configuration is defined in `.github/workflows/`
-
-Each workflow file specifies:
-
-- Trigger conditions (i.e. pull request)
-- The Python version(s) used
-- The commands executed during the pipeline
-
-If any step fails, the pipeline will fail and the pull request cannot be merged until the issue is resolved.
-
 ## ⚙️ CLI Arguments
 
-In addition to the directory path, the following options are available:
+The following optional arguments are available for use:
 
-### Basic CLI flags
+### General Options
 
 | Argument              | Description                                              |
 | --------------------- | -------------------------------------------------------- |
@@ -334,22 +268,19 @@ gitree --json output.json --no-contents
 Clone the **repository**:
 
 ```bash
-git clone [https://github.com/ShahzaibAhmad05/Gitree](https://github.com/ShahzaibAhmad05/Gitree)
-
+git clone https://github.com/ShahzaibAhmad05/gitree
 ```
 
 Move into the **project directory**:
 
 ```bash
-cd Gitree
-
+cd gitree
 ```
 
 Setup a **Virtual Environment** (to avoid package conflicts):
 
 ```bash
 python -m venv .venv
-
 ```
 
 Activate the **virtual environment**:
@@ -357,7 +288,6 @@ Activate the **virtual environment**:
 ```bash
 .venv/Scripts/Activate      # on windows
 .venv/bin/activate          # on linux/macOS
-
 ```
 
 > [!WARNING]
@@ -391,6 +321,6 @@ python -m tests
 ## Contributions
 
 > [!TIP]
-> This is **YOUR** tool. Issues and pull requests are welcome.
+> This is **YOUR** tool. Issues and pull requests are always welcome.
 
-Gitree is kept intentionally small and readable, so contributions that preserve **simplicity** are especially appreciated.
+Gitree is kept intentionally small and readable, so contributions that preserve **simplicity** and follow [Contributing Guidelines](https://github.com/ShahzaibAhmad05/gitree?tab=contributing-ov-file) are especially appreciated.
