@@ -58,8 +58,9 @@ class ParsingService:
         # Prepare the config object to return from this function
         config = Config(ctx, args)
         config.no_printing = config.copy or config.export or config.zip 
-        config.no_color = config.copy or config.export or config.zip
-        
+        if not config.no_color:
+            config.no_color = config.copy or config.export
+
         return ParsingService._fix_contradicting_args(ctx, config)
     
 
