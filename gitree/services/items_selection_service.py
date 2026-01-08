@@ -38,6 +38,7 @@ class ItemsSelectionService:
         ctx.logger.log(Logger.DEBUG, 
             f"Entered ItemsSelectionService at: {round((time.time()-start_time)*1000, 2)} ms")
 
+
         # Resolve all the root paths first
         # NOTE: the root path is appended at the end of the list of resolved paths
         resolved_include_paths = ItemsSelectionService._resolve_given_paths(
@@ -64,6 +65,9 @@ class ItemsSelectionService:
             gitignore_matcher=GitIgnoreMatcher(), start_time=start_time,
             curr_dir=resolved_include_paths[-1], 
             exclude_paths=resolved_exclude_paths[:-1])
+        
+        ctx.logger.log(Logger.DEBUG, 
+            f"Exited ItemsSelectionService at: {round((time.time()-start_time)*1000, 2)} ms")
 
         return resolved_items
 
@@ -150,7 +154,7 @@ class ItemsSelectionService:
                 "children": []
             }
             ctx.logger.log(Logger.DEBUG, 
-                f"Entered depth {curr_depth} at: {round((time.time()-start_time)*1000, 2)} ms")
+                f"Entered {curr_dir.name} at: {round((time.time()-start_time)*1000, 2)} ms")
 
 
             # Implementation for --max-depth
