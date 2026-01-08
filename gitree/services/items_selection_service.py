@@ -37,12 +37,18 @@ class ItemsSelectionService:
         # NOTE: the root path is appended at the end of the list of resolved paths
         resolved_root_paths = ItemsSelectionService._resolve_given_paths(
             ctx, config, config.paths)
+        ctx.logger.log(Logger.DEBUG, 
+            f"Selected paths at: {round((time.time()-start_time)*1000, 2)} ms")
+        
         resolved_include_paths = ItemsSelectionService._resolve_given_paths(
             ctx, config, config.include)
+        ctx.logger.log(Logger.DEBUG, 
+            f"Selected includes at: {round((time.time()-start_time)*1000, 2)} ms")
+        
         resolved_exclude_paths = ItemsSelectionService._resolve_given_paths(
             ctx, config, config.exclude)
-        ctx.logger.log(Logger.INFO, 
-            f"Selected roots, includes, excludes at: {round((time.time()-start_time)*1000, 2)} ms")
+        ctx.logger.log(Logger.DEBUG, 
+            f"Selected excludes at: {round((time.time()-start_time)*1000, 2)} ms")
         
 
         # Safety check to avoid crashes on no paths found
@@ -138,6 +144,11 @@ class ItemsSelectionService:
             return resolved_root, curr_entries
         
 
+        # Determine whether the current directory is under the given paths
+        dir_under_given_paths = ItemsSelectionService._dir_path_under_given_paths(
+            config, curr_dir)
+        
+
         # Get the dir's children, sorted order, and files first
         children_to_add = sorted(curr_dir.iterdir(), key=lambda p: (p.is_dir(), p.name.lower()))
 
@@ -157,21 +168,22 @@ class ItemsSelectionService:
 
 
             # NOTE: this whole if-elif block bellow basically solves the problem of
-            # all the files and dirs appearing in the output, when only the patterns
+            # all the files and dirs appearing in the output when only the patterns
             # of some files in some dirs is mentioned.
 
 
             # If current dir path is not given
-            if not ItemsSelectionService._dir_path_under_given_paths(config, curr_dir):
+            if not dir_under_given_paths:
                 
                 # If it is a file and it is not is resolved paths
                 # and if the current dir we are working for, is not given in paths
                 if (item_path.is_file() and not item_path in resolved_paths):
                     continue
 
+
                 # If it is a dir and it has no file under it that is in resolved_paths
-                elif (item_path.is_dir() and 
-                    not any(ItemsSelectionService._isunder(t, [item_path]) for t in resolved_paths)):
+                elif (item_path.is_dir() and not any(ItemsSelectionService._isunder(
+                        t, [item_path]) for t in resolved_paths)):
                     continue
 
 
