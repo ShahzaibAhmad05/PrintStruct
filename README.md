@@ -200,47 +200,52 @@ The following optional arguments are available for use:
 
 ### General Options
 
-| Argument              | Description                                              |
-| --------------------- | -------------------------------------------------------- |
-| `--version`, `-v`     | Displays the **installed version**.                      |
-| `--interactive`, `-i` | **Interactive selection UI**.                            |
-| `--init-config`       | Create a default `config.json` in the current directory. |
-| `--config-user`       | Open `config.json` in the **default editor**.            |
-| `--no-config`         | Ignore `config.json` and use **hardcoded defaults**.     |
+| Argument          | Description                                                                                                   |
+| ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| `--version`, `-v` | Display the **version number** of the tool.                                                                       |
+| `--config-user`   | Create a **default config.json** file in the current directory and open that file in the **default editor**.        |
+| `--no-config`     | Ignore both **user-level and global-level** `config.json` and use **default and CLI values** for configuration.       |
+| `--verbose`       | Enable **logger output** to the console. Enabling this prints a log after the full workflow run. Helpful for **debugging**. |
 
-### Input/Output flags
+### Output & Export Options
 
-| Argument                | Description                                                             |
-| ----------------------- | ----------------------------------------------------------------------- |
-| `--max-depth`           | Limit recursion depth (e.g., `--max-depth 1`).                          |
-| `--hidden-items`        | Include hidden files and directories (does not override `.gitignore`).  |
-| `--exclude [pattern]`   | Exclude patterns (e.g., `--exclude *.pyc __pycache__`).                 |
-| `--exclude-depth [n]`   | Limit depth for exclude patterns (e.g., `--exclude-depth 2`).           |
-| `--gitignore-depth [n]` | Control discovery depth for `.gitignore` (e.g., `--gitignore-depth 0`). |
-| `--no-gitignore`        | Ignore all `.gitignore` rules.                                          |
-| `--max-items`           | Limit items per directory (default: 20).                                |
-| `--max-entries`           | Limit entries (default: 40).                                          |
-| `--no-max-entries`        | Disable total entries limit.                                          |
-| `--no-files`            | Show only directories (hide files).                                     |
-| `--emoji`, `-e`         | Use emojis in output.                                                   |
-| `--summary`             | Print file/folder counts per level.                                     |
-| `--include [pattern]`   | Include patterns (often used with interactive mode).                    |
-| `--include-file-type`   | Include a specific file type (e.g., `.py`, `json`).                     |
-| `--include-file-types`  | Include multiple file types (e.g., `png jpg json`).                     |
+| Argument          | Description                                                                                  |
+| ----------------- | -------------------------------------------------------------------------------------------- |
+| `--zip`, `-z`     | Create a **zip archive** of the given directory respecting **gitignore rules**.                      |
+| `--export`        | Save **project structure** along with its **contents** to a file with the format specified using `--format`. |
+| `--format`        | **Format output** only. Options: `tree`, `json`, `md`.                                           |
 
-### Listing flags
+### Listing Options
 
-| Argument                | Description                                                                |
-| ----------------------- | -------------------------------------------------------------------------- |
-| `--max-depth`           | Limit **recursion depth** (e.g., `--max-depth 1`).                         |
-| `--hidden-items`        | Include **hidden files and directories** (does not override `.gitignore`). |
-| `--exclude [pattern]`   | **Exclude patterns** (e.g., `--exclude *.pyc __pycache__`).                |
-| `--exclude-depth [n]`   | Limit depth for **exclude patterns** (e.g., `--exclude-depth 2`).          |
-| `--gitignore-depth [n]` | Control discovery depth for **.gitignore** (e.g., `--gitignore-depth 0`).  |
-| `--no-gitignore`        | Ignore all **.gitignore** rules.                                           |
-| `--max-items`           | Limit **items per directory** (default: 20).                               |
-| `--no-max-items`            | Remove per-directory **item limit**.                                       |
-| ` --no-files`           | Show only **directories** (hide files).                                    |
+| Argument                     | Description                                                                          |
+| ---------------------------- | ------------------------------------------------------------------------------------ |
+| `--max-items`                | Limit **items to be selected** per directory.                                           |
+| `--max-entries`              | Limit **entries (files/dirs)** to be selected for the overall output.                   |
+| `--max-depth`                | **Maximum depth** to traverse when selecting files.                                     |
+| `--gitignore-depth`          | Limit depth to look for during **`.gitignore` processing**.                             |
+| `--hidden-items`             | Show **hidden files and directories**.                                                  |
+| `--exclude [pattern ...]`    | **Patterns of files** to specifically exclude.                                          |
+| `--exclude-depth`            | Limit depth for **exclude patterns**.                                                   |
+| `--include [pattern ...]`    | **Patterns of files** to specifically include.                                          |
+| `--include-file-types`       | Include files of **certain types**.                                                     |
+| `--copy`, `-c`               | **Copy file contents** and project structure to **clipboard**. Similar to `--export` but copies to the clipboard instead. |
+| `--emoji`, `-e`              | Show **emojis** in the output.                                                          |
+| `--interactive`, `-i`        | Use **interactive mode** for further file selection.                                    |
+| `--files-first`              | Print **files before directories**.                                                     |
+| `--no-color`                 | Disable **colored output**.                                                             |
+| `--no-contents`              | Don't include **file contents** in export/copy.                                         |
+| `--no-contents-for [path ...]` | Exclude **contents for specific files** for export/copy.                              |
+| `--max-file-size`            | **Maximum file size** in MB to include in exports (default: 1.0).                       |
+| `--override-files`           | **Override existing files**.                                                            |
+
+### Listing Override Options
+
+| Argument           | Description                                |
+| ------------------ | ------------------------------------------ |
+| `--no-max-entries` | Disable **`--max-entries` limit**.             |
+| `--no-max-items`   | Disable **`--max-items` limit**.               |
+| `--no-gitignore`   | Do not use **`.gitignore` rules**.             |
+| `--no-files`       | Hide files (show only **directories**).        |
 
 ---
 
