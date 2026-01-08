@@ -117,38 +117,38 @@ class ParsingService:
     @staticmethod
     def _examples_text() -> str:
         return """
-            Usage:
-            - gitree first selects the items (files/dirs) using the path 
-                given, then decides whether to zip/export the project
-                (with contents), or to just print the tree structure of the
-                project.
+Usage:
 
-            - It respects gitignore rules by default unless --no-gitignore
-                is used.
-        
-                
-            Use-case Examples:
+    - gitree first selects the items (files/dirs) using the path 
+        given, then decides whether to zip/export the project
+        (with contents), or to just print the tree structure of the
+        project.
 
-            gitree
-                Print tree structure of current directory
+    - It respects gitignore rules by default unless --no-gitignore
+        is used.
+         
+Use-Case Examples:
 
-            gitree tests/*.py --copy
-                Select all .py files under the folder tests and 
-                copy their contents along with the tree structure,
-                useful for pasting codebase context to LLMs.
+    gitree
+        Print tree structure of current directory
 
-            gitree tests .github
-                Select items only under these two folders, find 
-                their parent folder, and print the tree structure
-                for those.
+    gitree tests/*.py --copy
+        Select all .py files under the folder tests and 
+        copy their contents along with the tree structure,
+        useful for pasting codebase context to LLMs.
 
-            gitree --export proj --format json
-                Export all items and their contents under the current 
-                directory in a file named proj.json
+    gitree tests .github
+        Select items only under these two folders, find 
+        their parent folder, and print the tree structure
+        for those.
 
-            gitree --zip project
-                Create a zip named project.zip of the whole project 
-                respecting gitignore rules.
+    gitree --export proj --format json
+        Export all items and their contents under the current 
+        directory in a file named proj.json
+
+    gitree --zip project
+        Create a zip named project.zip of the whole project 
+        respecting gitignore rules.
         """.strip()
 
 
