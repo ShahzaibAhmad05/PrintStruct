@@ -58,6 +58,8 @@ class ParsingService:
         # Prepare the config object to return from this function
         config = Config(ctx, args)
         config.no_printing = config.copy or config.export or config.zip 
+        config.no_color = config.copy or config.export or config.zip
+        
         return ParsingService._fix_contradicting_args(ctx, config)
     
 
@@ -77,7 +79,6 @@ class ParsingService:
         """
         
         if getattr(args, "export", None) is not None:
-            args.no_color = True
             args.export = ParsingService._fix_output_path(
                 ctx, args.export,
                 default_extensions={"tree": ".txt", "json": ".json", "md": ".md"},
