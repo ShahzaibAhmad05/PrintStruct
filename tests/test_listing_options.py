@@ -121,3 +121,20 @@ class TestListingFlags(BaseCLISetup):
         (self.root / "error.log").write_text("log")
         (self.root / "data.json").write_text("{}")
 
+
+    def test_explicit_hidden_directory_is_included_without_hidden_flag(self):
+        # Create a hidden directory with content
+        hidden_dir = self.root / ".hidden_explicit"
+        hidden_dir.mkdir()
+        (hidden_dir / "inside.txt").write_text("content")
+
+        # Run gitree explicitly pointing to the hidden directory
+        result = self.run_gitree(".hidden_explicit")
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertTrue(result.stdout.strip())
+
+        # The hidden directory and its contents should appear
+        self.assertIn(".hidden_explicit", result.stdout)
+        self.assertIn("inside.txt", result.stdout)
+

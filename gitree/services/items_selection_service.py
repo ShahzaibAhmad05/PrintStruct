@@ -37,6 +37,8 @@ class ItemsSelectionService:
         # NOTE: the root path is appended at the end of the list of resolved paths
         resolved_root_paths = ItemsSelectionService._resolve_given_paths(
             ctx, config, config.paths)
+        explicit_roots = ItemsSelectionService._get_explicit_roots(
+            resolved_root_paths)
         resolved_include_paths = ItemsSelectionService._resolve_given_paths(
             ctx, config, config.include)
         resolved_exclude_paths = ItemsSelectionService._resolve_given_paths(
@@ -54,7 +56,7 @@ class ItemsSelectionService:
         # Start from the parent dir and keep adding items recursively
         # includes resolving hidden_files, gitignore, include and exclude
         resolved_items, _ = ItemsSelectionService._resolve_items_rec(ctx, config, 
-            resolved_paths=resolved_root_paths, curr_depth=0, curr_entries=1,
+            resolved_paths=resolved_root_paths, explicit_roots=explicit_roots, curr_depth=0, curr_entries=1,
             gitignore_matcher=GitIgnoreMatcher(),
             curr_dir=resolved_root_paths[-1], include_paths=resolved_include_paths[:-1], 
             exclude_paths=resolved_exclude_paths[:-1])
@@ -117,7 +119,7 @@ class ItemsSelectionService:
 
     @staticmethod
     def _resolve_items_rec(ctx: AppContext, config: Config, *,
-        resolved_paths: list[Path], curr_dir: Path, curr_depth: int, curr_entries: int,
+        resolved_paths: list[Path], explicit_roots: list[Path],curr_dir: Path, curr_depth: int, curr_entries: int,
         include_paths: list[Path], exclude_paths: list[Path], 
         gitignore_matcher: GitIgnoreMatcher) -> tuple[dict[str, Any], int]:
         """
@@ -188,7 +190,13 @@ class ItemsSelectionService:
             # Check if the item is in resolved paths, or in include paths
             # Check if the item is defined by an include pattern
             # Or if there is a gitignore that says it is excluded
-            if ((config.hidden_items or not ItemsSelectionService._ishidden(item_path)) and
+            
+            is_under_explicit = any(
+                item_path == p or item_path.is_relative_to(p)
+                for p in explicit_roots
+            )
+
+            if ((is_under_explicit or config.hidden_items or not ItemsSelectionService._ishidden(item_path)) and
                 ItemsSelectionService._isunder(item_path, resolved_paths + include_paths) and 
                 not ItemsSelectionService._isunder(item_path, exclude_paths) and 
                 (not curr_depth > config.gitignore_depth and 
@@ -205,7 +213,7 @@ class ItemsSelectionService:
 
                     else:      
                         resolved_dir, curr_entries = ItemsSelectionService._resolve_items_rec(
-                            ctx, config, resolved_paths=resolved_paths, 
+                            ctx, config, resolved_paths=resolved_paths, explicit_roots=explicit_roots,
                             curr_entries=curr_entries, curr_dir=item_path, include_paths=include_paths, gitignore_matcher=gitignore_matcher,
                             exclude_paths=exclude_paths, curr_depth=curr_depth+1)
                             
@@ -229,6 +237,15 @@ class ItemsSelectionService:
 
         return ItemsSelectionService._isunder(dir_path, given_paths)
     
+    
+    @staticmethod
+    def _get_explicit_roots(resolved_root_paths: list[Path]) -> list[Path]:
+        """
+        Return only the paths explicitly provided by the user (excluding project root).
+        """
+        cwd = Path(os.getcwd()).resolve()
+        return [p for p in resolved_root_paths[:-1] if p.resolve() != cwd]
+
 
     @staticmethod
     def _isglob(path_str: str) -> bool:
