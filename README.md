@@ -104,7 +104,7 @@ gitree --export project --format md
 
 ---
 
-## How it Works
+## 🧩 How it Works
 
 ```
     ╭────────────────────────────╮
@@ -154,7 +154,7 @@ gitree --export project --format md
 
 ---
 
-### Updating Gitree:
+### 🏷️ Updating Gitree:
 
 To update the tool, type:
 
