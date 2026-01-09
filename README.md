@@ -17,7 +17,7 @@
 
 ---
 
-## 📦 Installation (Recommended)
+## 📦 Installation
 
 Install using **pip** (python package manager):
 
