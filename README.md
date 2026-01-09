@@ -17,16 +17,16 @@
 
 ---
 
-## 📦 Installation
+## 📦 Installation (Recommended)
 
 Install using **pip** (python package manager):
 
 ```bash
 # Install the latest version using pip
 pip install gitree
-# To update gitree
-# pip install --upgrade gitree
 
+# to update gitree
+pip install -U gitree
 ```
 
 ---
