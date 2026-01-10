@@ -78,7 +78,8 @@ def main() -> None:
     # Select files interactively if requested
     # NOTE: this one is currently broken
     if config.interactive:
-        resolved_root = InteractiveSelectionService.run(ctx, config, resolved_root)
+        resolved_root, interaction_duration = InteractiveSelectionService.run(ctx, config, resolved_root)
+        start_time += interaction_duration
 
 
     # Everything is ready
