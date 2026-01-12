@@ -8,7 +8,6 @@ Code file for housing InteractiveSelectionService Class
 from pathlib import Path
 from typing import Any, Dict, List, Set, Tuple
 from collections import defaultdict
-import time
 
 # Dependencies
 from prompt_toolkit.application import Application
@@ -26,7 +25,7 @@ from ..objects.config import Config
 
 class InteractiveSelectionService:
     @staticmethod
-    def run(ctx: AppContext, config: Config, resolved_root: Dict[str, Any]) -> Tuple[Dict[str, Any], float]:
+    def run(ctx: AppContext, config: Config, resolved_root: Dict[str, Any]) -> Dict[str, Any]:
         """
         Launch an interactive terminal UI for selecting files under the given resolved root dict.
 
@@ -43,7 +42,7 @@ class InteractiveSelectionService:
             resolved_root (dict): A resolved root dict with "self" as a Path and "children" as nested items
 
         Returns:
-            Tuple[Dict[str, Any], float]: The updated resolved root dict and the duration of interaction in seconds
+            dict: The updated resolved root dict in the same format as the input
         """
         from prompt_toolkit.data_structures import Point
 
@@ -65,7 +64,7 @@ class InteractiveSelectionService:
         )
 
         if not tree:
-            return resolved_root, 0.0
+            return resolved_root
 
         cursor = 0
 
@@ -226,9 +225,7 @@ class InteractiveSelectionService:
 
         app.layout.focus(tree_window)
 
-        start_interaction = time.time()
         app.run()
-        end_interaction = time.time()
 
         selected_files = {
             (root_path / item["path"])
@@ -236,7 +233,7 @@ class InteractiveSelectionService:
             if item["type"] == "file" and item["checked"]
         }
 
-        return InteractiveSelectionService._filter_resolved_root(resolved_root, selected_files), (end_interaction - start_interaction)
+        return InteractiveSelectionService._filter_resolved_root(resolved_root, selected_files)
 
 
     @staticmethod
