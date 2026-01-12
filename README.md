@@ -1,6 +1,6 @@
 # gitree 🌴
 
-**A CLI tool to provide LLM context for coding projects by combining project files into a single file with a number of different formats to choose from.**
+**A CLI tool that helps generate structured context for LLMs by combining project files into a single, exportable format.**
 
 <br>
 
@@ -24,6 +24,9 @@ Install using **pip** (python package manager):
 ```bash
 # Install the latest version using pip
 pip install gitree
+
+# to update gitree
+pip install -U gitree
 ```
 
 ---
@@ -154,15 +157,6 @@ gitree --export project --format md
 
 ---
 
-### 🏷️ Updating Gitree:
-
-To update the tool, type:
-
-```bash
-pip install -U gitree
-```
-
-Pip will automatically replace the older version with the **latest release**.
 
 ---
 
@@ -176,6 +170,8 @@ Pip will automatically replace the older version with the **latest release**.
 | **Copy Your Codebase** | Instantly copy the whole codebase file contents to your clipboard to paste into LLMs |
 | **Multiple Export Formats** | Export your codebase contents to files using tree, json and markdown formats |
 | **Zipping the Whole Project** | Create project archives that automatically respect `.gitignore` rules |
+| **Large/Binary Files Handling** | Automatically detects binary and large files and marks or skips them during export |
+
 
 ---
 
@@ -249,22 +245,6 @@ The following optional arguments are available for use:
 
 ---
 
-## 📝 File Contents in Exports
-
-When using `--json`, `--tree`, or `--md` flags, **file contents are included by default**. This feature:
-
-- ✅ Includes **text file contents** (up to 1MB per file)
-- ✅ Detects and marks **binary files** as `[binary file]`
-- ✅ Handles **large files** by marking them as `[file too large: X.XXmb]`
-- ✅ Uses **syntax highlighting** in Markdown format based on file extension
-- ✅ Works with all **filtering options** (`--exclude`, `--include`, `.gitignore`, etc.)
-
-To export only the tree structure without file contents, use the `--no-contents` flag:
-
-```bash
-gitree --json output.json --no-contents
-
-```
 
 ---
 

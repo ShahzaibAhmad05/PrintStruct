@@ -24,7 +24,8 @@ class ItemsSelectionService:
 
     def resolve_items(ctx: AppContext, config: Config, start_time: float) -> dict[str, Any]:
         """
-        Resolves the items to include in the output using the config object.
+        Resolves the items to include in the output using the config object. This 
+        function is heavy on performance, so a start_time is needed to log performance.
 
         Args:
             start_time (float): relative time value to log performance of the service
@@ -33,34 +34,42 @@ class ItemsSelectionService:
             dict: A dict of the resolved items
         """
 
+        # Log time at entry
+        ctx.logger.log(Logger.DEBUG, 
+            f"Entered ItemsSelectionService at: {round((time.time()-start_time)*1000, 2)} ms")
+
+
         # Resolve all the root paths first
         # NOTE: the root path is appended at the end of the list of resolved paths
-        resolved_root_paths = ItemsSelectionService._resolve_given_paths(
-            ctx, config, config.paths)
         resolved_include_paths = ItemsSelectionService._resolve_given_paths(
-            ctx, config, config.include)
+            ctx, config, config.paths + config.include)
+        ctx.logger.log(Logger.DEBUG, 
+            f"Selected includes at: {round((time.time()-start_time)*1000, 2)} ms")
+        
         resolved_exclude_paths = ItemsSelectionService._resolve_given_paths(
             ctx, config, config.exclude)
-        ctx.logger.log(Logger.INFO, 
-            f"Selected roots, includes, excludes at: {round((time.time()-start_time)*1000, 2)} ms")
+        ctx.logger.log(Logger.DEBUG, 
+            f"Selected excludes at: {round((time.time()-start_time)*1000, 2)} ms")
         
 
         # Safety check to avoid crashes on no paths found
-        if not resolved_root_paths:
+        if not resolved_include_paths:
             ctx.logger.log(Logger.ERROR, "No included paths were found matching given args")
             return {}
 
 
         # Start from the parent dir and keep adding items recursively
         # includes resolving hidden_files, gitignore, include and exclude
-        resolved_items, _ = ItemsSelectionService._resolve_items_rec(ctx, config, 
-            resolved_paths=resolved_root_paths, curr_depth=0, curr_entries=1,
-            gitignore_matcher=GitIgnoreMatcher(),
-            curr_dir=resolved_root_paths[-1], include_paths=resolved_include_paths[:-1], 
+        resolved_items = ItemsSelectionService._resolve_items_rec_wrapper(ctx, config, 
+            resolved_include_paths=resolved_include_paths, curr_depth=0,
+            gitignore_matcher=GitIgnoreMatcher(), start_time=start_time,
+            curr_dir=resolved_include_paths[-1], 
             exclude_paths=resolved_exclude_paths[:-1])
+        
+        ctx.logger.log(Logger.DEBUG, 
+            f"Exited ItemsSelectionService at: {round((time.time()-start_time)*1000, 2)} ms")
 
         return resolved_items
-
 
     @staticmethod
     def _resolve_given_paths(ctx: AppContext, config: Config, attr: list[str]) -> list[Path]:
@@ -110,15 +119,19 @@ class ItemsSelectionService:
 
         # Replace the placeholder for the parent path in the calculated paths
         if calculated_paths:
-            calculated_paths.append(Path(os.path.commonpath(calculated_paths)))
+            try:
+                calculated_paths.append(Path(os.path.commonpath(calculated_paths)))
+            except ValueError as e:
+                print(e)
+                exit(1)
 
         return calculated_paths
-    
+
 
     @staticmethod
-    def _resolve_items_rec(ctx: AppContext, config: Config, *,
-        resolved_paths: list[Path], curr_dir: Path, curr_depth: int, curr_entries: int,
-        include_paths: list[Path], exclude_paths: list[Path], 
+    def _resolve_items_rec_wrapper(ctx: AppContext, config: Config, *,
+        resolved_include_paths: list[Path], curr_dir: Path, curr_depth: int, 
+        exclude_paths: list[Path], start_time: float,
         gitignore_matcher: GitIgnoreMatcher) -> tuple[dict[str, Any], int]:
         """
         Resolve the paths recursively.
@@ -128,91 +141,127 @@ class ItemsSelectionService:
             int: current entries to keep track of the number of entries during recursion
         """
 
-        resolved_root: dict[str, Any] = {
-            "self": curr_dir,
-            "children": []
-        }
-
-        # Implementation for --max-depth
-        if curr_depth > config.max_depth - 1:
-            return resolved_root, curr_entries
+        # Vars to be used by the inner recursive function
+        curr_entries: int = 0
         
 
-        # Get the dir's children, sorted order, and files first
-        children_to_add = sorted(curr_dir.iterdir(), key=lambda p: (p.is_dir(), p.name.lower()))
+        def _resolve_items_rec(ctx: AppContext, config: Config, *,
+            resolved_include_paths: list[Path], curr_dir: Path, curr_depth: int, 
+            exclude_paths: list[Path], start_time: float,
+            gitignore_matcher: GitIgnoreMatcher) -> tuple[dict[str, Any], int]:
+
+            nonlocal curr_entries
+
+            resolved_root: dict[str, Any] = {
+                "self": curr_dir,
+                "children": []
+            }
+            ctx.logger.log(Logger.DEBUG, 
+                f"Entered {curr_dir.name} at: {round((time.time()-start_time)*1000, 2)} ms")
 
 
-        # Setup gitignore object for this dir (if there is a .gitignore)
-        if curr_depth <= config.gitignore_depth and (curr_dir / ".gitignore").is_file():
-            gitignore_matcher.add_gitignore(
-                GitIgnore(ctx, config, gitignore_path=(curr_dir / ".gitignore")))
+            # Implementation for --max-depth
+            if curr_depth > config.max_depth - 1:
+                return resolved_root, curr_entries
+            
+
+            # Determine whether the current directory is under the given paths
+            dir_under_given_paths = ItemsSelectionService._dir_path_under_given_paths(
+                config, curr_dir)
+            
+
+            # Get the dir's children, sorted order, and files first
+            children_to_add = sorted(curr_dir.iterdir(), key=lambda p: (p.is_dir(), p.name.lower()))
 
 
-        items_added = 0
-        # Now traverse the dir and add items
-        for item_path in children_to_add:
-
-            # If --no-files is used, then skip files
-            if item_path.is_file() and config.no_files: continue
+            # Setup gitignore object for this dir (if there is a .gitignore)
+            if curr_depth <= config.gitignore_depth and (curr_dir / ".gitignore").is_file():
+                gitignore_matcher.add_gitignore(
+                    GitIgnore(ctx, config, gitignore_path=(curr_dir / ".gitignore")))
 
 
-            # NOTE: this whole if-elif block bellow basically solves the problem of
-            # all the files and dirs appearing in the output, when only the patterns
-            # of some files in some dirs is mentioned.
+            items_added = 0
+            # Now traverse the dir and add items
+            for item_path in children_to_add:
+
+                # If --no-files is used, then skip files
+                if item_path.is_file() and config.no_files: continue
 
 
-            # If current dir path is not given
-            if not ItemsSelectionService._dir_path_under_given_paths(config, curr_dir):
+                # NOTE: this whole if-elif block bellow basically solves the problem of
+                # all the files and dirs appearing in the output when only the patterns
+                # of some files in some dirs is mentioned.
+
+
+                # If current dir path is not given
+                if not dir_under_given_paths:
+                    
+                    # If it is a file and it is not is resolved paths
+                    # and if the current dir we are working for, is not given in paths
+                    if (item_path.is_file() and not item_path in resolved_include_paths):
+                        continue
+
+
+                    # TODO: Pass a list of the important dirs into this function to avoid
+                    # this check and improve performance
+                    # Like if a file gets added to included paths it's parent dirs
+                    # should get added too, and then this elif statement can be removed
+
+                    # If it is a dir and it has no file under it that is in resolved_paths
+                    elif (item_path.is_dir() and not any(ItemsSelectionService._isunder(
+                            t, [item_path]) for t in resolved_include_paths)):
+                        continue
+
+
+                # If reached --max-items or --max-entries, then exit
+                # NOTE: This is ok for now, but needs to be corrected later
+                if ((not config.no_max_items and items_added >= config.max_items) or
+                    (not config.no_max_entries and curr_entries >= config.max_entries)): 
+                    break
+
+
+                # Check if it is a hidden file/dir or hidden-items flag is not used
+                if not config.hidden_items and ItemsSelectionService._ishidden(item_path):
+                    continue
+
                 
-                # If it is a file and it is not is resolved paths
-                # and if the current dir we are working for, is not given in paths
-                if (item_path.is_file() and not item_path in resolved_paths):
-                    continue
-
-                # If it is a dir and it has no file under it that is in resolved_paths
-                elif (item_path.is_dir() and 
-                    not any(ItemsSelectionService._isunder(t, [item_path]) for t in resolved_paths)):
+                # if within exclude depth and the item is in excludes
+                if curr_depth <= config.exclude_depth and ItemsSelectionService._isunder(
+                    item_path, exclude_paths):
                     continue
 
 
-            # If reached --max-items or --max-entries, then exit
-            # NOTE: This is ok for now, but needs to be corrected later
-            if (not config.no_max_items and items_added >= config.max_items or
-                not config.no_max_entries and curr_entries >= config.max_entries): 
-                break
+                # if within gitignore depth and gitignore says it is excluded
+                if (curr_depth <= config.gitignore_depth and 
+                    gitignore_matcher.excluded(item_path)):
+                    continue
 
 
-            # NOTE: DANGEROUS IF-STATEMENT AHEAD!
-
-            # Check if it is not a hidden file/dir or hidden-items flag is used
-            # Check if the item is in resolved paths, or in include paths
-            # Check if the item is defined by an include pattern
-            # Or if there is a gitignore that says it is excluded
-            if ((config.hidden_items or not ItemsSelectionService._ishidden(item_path)) and
-                ItemsSelectionService._isunder(item_path, resolved_paths + include_paths) and 
-                not ItemsSelectionService._isunder(item_path, exclude_paths) and 
-                (not curr_depth > config.gitignore_depth and 
-                not gitignore_matcher.excluded(item_path))):  
-
-
-                    items_added += 1
-                    curr_entries += 1  
-                    
-                    
-                    # If the item is a file then append directly, else resolve for it
-                    if item_path.is_file():
-                        resolved_root["children"].append(item_path)
-
-                    else:      
-                        resolved_dir, curr_entries = ItemsSelectionService._resolve_items_rec(
-                            ctx, config, resolved_paths=resolved_paths, 
-                            curr_entries=curr_entries, curr_dir=item_path, include_paths=include_paths, gitignore_matcher=gitignore_matcher,
-                            exclude_paths=exclude_paths, curr_depth=curr_depth+1)
-                            
-                        resolved_root["children"].append(resolved_dir)
+                # if within include depth and the item is in includes 
+                if (ItemsSelectionService._isunder(item_path, resolved_include_paths)):
                         
+                        items_added += 1
+                        curr_entries += 1  
+                        
+                        # If the item is a file then append directly, else resolve for it
+                        if item_path.is_file():
+                            resolved_root["children"].append(item_path)
 
-        return resolved_root, curr_entries
+                        else:      
+                            resolved_dir = _resolve_items_rec(
+                                ctx, config, resolved_include_paths=resolved_include_paths, curr_dir=item_path, gitignore_matcher=gitignore_matcher, start_time=start_time,
+                                exclude_paths=exclude_paths, curr_depth=curr_depth+1)
+                                
+                            resolved_root["children"].append(resolved_dir)
+                            
+            return resolved_root
+        
+
+        # Use the inner recursive function
+        return _resolve_items_rec(ctx, config, resolved_include_paths=resolved_include_paths, 
+            curr_dir=curr_dir, curr_depth=curr_depth,
+            exclude_paths=exclude_paths, start_time=start_time, 
+            gitignore_matcher=gitignore_matcher)
 
 
     @staticmethod

@@ -69,7 +69,21 @@ class ParsingService:
         """
         Prevents unexpected behaviour of the tool if contradictory options are used
         """
-        # TODO: Implement this function
+        
+        # Remove intersecting values for include and exclude patterns
+        # Remove duplicates as well
+        include_set = set(config.include)
+        exclude_set = set(config.exclude)
+        common_values = include_set & exclude_set
+
+        if common_values:
+            ctx.logger.log(ctx.logger.WARNING,
+                "--include and --exclude patterns have overlapping values. "
+                "These values will be removed from both lists ")
+            config.include = list(include_set - common_values)
+            config.exclude = list(exclude_set - common_values)
+
+
         return config
 
     

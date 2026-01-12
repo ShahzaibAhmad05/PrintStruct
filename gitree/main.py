@@ -59,8 +59,6 @@ def main() -> None:
 
     # Prepare the config object (this has all the args now)
     config = ParsingService.parse_args(ctx)
-    ctx.logger.log(Logger.INFO, 
-        f"Left ParsingService at: {round((time.time()-start_time)*1000, 2)} ms")
 
 
     # if general options used, they are executed here
@@ -71,22 +69,20 @@ def main() -> None:
     # This service returns all the items to include resolved in a dict
     # Hover over ItemsSelectionService to check the format which it returns
     resolved_root = ItemsSelectionService.resolve_items(ctx, config, start_time)
-    ctx.logger.log(Logger.INFO, 
-        f"Left ItemsSelectionService at: {round((time.time()-start_time)*1000, 2)} ms")
 
 
     # Select files interactively if requested
     # NOTE: this one is currently broken
     if config.interactive:
+        checkpoint_time = time.time()       # Pause the timer when the user is selecting
         resolved_root = InteractiveSelectionService.run(ctx, config, resolved_root)
+        start_time += (time.time() - checkpoint_time)   # Resume the timer
 
 
     # Everything is ready
     # Now do the final operations
     if config.zip:
         ZippingService.run(ctx, config, resolved_root)
-        ctx.logger.log(Logger.INFO, 
-            f"Left ZippingService at: {round((time.time()-start_time)*1000, 2)} ms")
 
     else:
         DrawingService.run(ctx, config, resolved_root)
@@ -95,13 +91,9 @@ def main() -> None:
         
         if config.copy:
             CopyService.run(ctx, config, resolved_root)
-            ctx.logger.log(Logger.INFO, 
-                f"Left CopyService at: {round((time.time()-start_time)*1000, 2)} ms")
 
         elif config.export:
             ExportService.run(ctx, config, resolved_root)
-            ctx.logger.log(Logger.INFO, 
-                f"Left ExportService at: {round((time.time()-start_time)*1000, 2)} ms")
 
 
     # Log performance (time)
