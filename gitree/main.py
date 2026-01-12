@@ -78,7 +78,9 @@ def main() -> None:
     # Select files interactively if requested
     # NOTE: this one is currently broken
     if config.interactive:
+        checkpoint_time = time.time()       # Pause the timer when the user is selecting
         resolved_root = InteractiveSelectionService.run(ctx, config, resolved_root)
+        start_time += (time.time() - checkpoint_time)   # Resume the timer
 
 
     # Everything is ready
