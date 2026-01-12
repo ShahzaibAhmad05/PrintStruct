@@ -72,7 +72,7 @@ class ItemsSelectionService:
         return resolved_items
 
     @staticmethod
-    def _resolve_given_paths(ctx: AppContext, config: Config, attr: list[str]) -> list[Path | None]:
+    def _resolve_given_paths(ctx: AppContext, config: Config, attr: list[str]) -> list[Path]:
         """
         Resolve the given paths in the CLI args. Handles glob patterns, simple paths,
         and common-parent-search.
@@ -84,7 +84,7 @@ class ItemsSelectionService:
             list[Path]: A list of paths to be added, with the parent appended at the end
         """
 
-        calculated_paths: list[Path | None] = []
+        calculated_paths: list[Path] = []
         base_path = Path(os.getcwd())          # This is needed to resolve paths later
 
 
@@ -120,15 +120,10 @@ class ItemsSelectionService:
         # Replace the placeholder for the parent path in the calculated paths
         if calculated_paths:
             try:
-                str_paths = [str(p) for p in calculated_paths if p is not None]
-                common = os.path.commonpath(str_paths)
-                calculated_paths.append(Path(common))
+                calculated_paths.append(Path(os.path.commonpath(calculated_paths)))
             except ValueError as e:
-                ctx.logger.log(
-                    Logger.ERROR,
-                    f"Unable to determine common path for given paths: {e}"
-                )
-                calculated_paths.append(None)
+                print(e)
+                exit(1)
 
         return calculated_paths
 
